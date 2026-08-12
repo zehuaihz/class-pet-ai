@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test"
 
 test("approval and reverse flows", async ({ page }) => {
   await page.route("**/api/v1/classrooms", async (route) => {
-    await route.fulfill({ json: { success: true, data: { items: [{ id: "class_1", name: "三年级2班", studentCount: 3, petLevel: 8 }] }, error: null, meta: null } })
+    await route.fulfill({ json: { success: true, data: { items: [{ id: "class_1", name: "三年级2班", studentCount: 3, graduatedPetCount: 1 }] }, error: null, meta: null } })
   })
   await page.route("**/api/v1/classrooms/class_1/checkin-tasks", async (route) => {
     await route.fulfill({ json: { success: true, data: { items: [{ id: "t_1", title: "阅读 20 分钟", rewardPoints: 2 }] }, error: null, meta: null } })

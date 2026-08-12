@@ -2,15 +2,25 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
+import { PetVisual } from "@/components/pets/PetVisual"
+import type { PetView } from "@/lib/zoo-types"
 
-type ScreenData = {
+interface GloryRow {
+  student: { id: string; name: string }
+  badgeCount: number
+  pet: { speciesKey: string; level: number } | null
+}
+
+interface ScreenData {
   classroomName: string
-  pet: { name: string; level: number; growthValue: number }
+  systemName: string
   todayPointCount: number
-  checkinRate: number
-  rankings: Array<{ id: string; name: string; totalPoints: number }>
+  zoo: Array<{ student: { id: string; name: string }; badgeCount: number; pet: PetView | null }>
+  gloryBoard: GloryRow[]
   slogan: string
 }
+
+const MEDALS = ["🥇", "🥈", "🥉"]
 
 export default function ScreenPage() {
   const params = useParams<{ classroomId: string }>()
@@ -46,12 +56,12 @@ export default function ScreenPage() {
   }
 
   return (
-    <main className={`min-h-screen bg-slate-900 p-6 text-white ${fullScreen ? "" : ""}`}>
+    <main className="min-h-screen bg-slate-900 p-6 text-white">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex items-center justify-between rounded-2xl bg-slate-800/80 px-5 py-4">
           <div>
             <h1 className="text-3xl font-bold">{screen?.classroomName ?? "班级大屏"}</h1>
-            <p className="mt-1 text-slate-300">班级宠物：{screen?.pet.name ?? "云朵龙"}</p>
+            <p className="mt-1 text-slate-300">{screen?.systemName ?? "班级动物园"} · 今日加分 {screen?.todayPointCount ?? 0}</p>
           </div>
           <div className="flex gap-2">
             {fullScreen ? (
@@ -62,32 +72,45 @@ export default function ScreenPage() {
           </div>
         </div>
 
-        <section className="rounded-3xl bg-slate-800 p-10 shadow-2xl">
-          <div className="text-center text-9xl">🐉</div>
-          <div className="mt-6 text-center text-4xl font-semibold">成长值 {screen?.pet.growthValue ?? 760} / 1000</div>
-          <div className="mt-3 text-center text-lg text-slate-300">{screen?.slogan ?? "今天继续加分，让宠物升级！"}</div>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          {[
-            ["今日加分", `${screen?.todayPointCount ?? 42}`],
-            ["打卡率", `${Math.round((screen?.checkinRate ?? 0.85) * 100)}%`],
-            ["宠物等级", `Lv.${screen?.pet.level ?? 8}`],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-slate-800 p-6 text-center shadow-lg">
-              <div className="text-sm text-slate-400">{label}</div>
-              <div className="mt-2 text-4xl font-bold">{value}</div>
-            </div>
-          ))}
+        <section className="rounded-3xl bg-slate-800 p-6 shadow-2xl">
+          <div className="mb-4 text-center text-xl font-semibold text-slate-200">🐾 班级动物园 · {screen?.slogan ?? ""}</div>
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {(screen?.zoo ?? []).map((item) => (
+              <div key={item.student.id} className="flex flex-col items-center rounded-2xl bg-slate-700/60 p-3 text-center">
+                <div className="flex h-20 items-center justify-center">
+                  {item.pet ? (
+                    <PetVisual speciesKey={item.pet.speciesKey} level={item.pet.level} size="text-5xl" />
+                  ) : (
+                    <span className="text-5xl">🐾</span>
+                  )}
+                </div>
+                <div className="mt-2 truncate text-sm font-semibold">{item.student.name}</div>
+                {item.pet ? (
+                  <>
+                    <div className="text-xs text-green-400">Lv.{item.pet.level}</div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-600">
+                      <div className="h-full rounded-full bg-green-400" style={{ width: `${Math.round((item.pet.progressRatio ?? 0) * 100)}%` }} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-slate-400">未分配</div>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="rounded-2xl bg-slate-800 p-6 shadow-lg">
-          <h2 className="font-semibold">排行榜</h2>
+          <h2 className="font-semibold">光荣榜（徽章排行）</h2>
           <div className="mt-4 space-y-3">
-            {(screen?.rankings ?? []).map((student, index) => (
-              <div key={student.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-700 px-4 py-3">
-                <div>{index + 1}. {student.name}</div>
-                <div className="font-semibold text-green-400">{student.totalPoints} 分</div>
+            {(screen?.gloryBoard ?? []).map((row, index) => (
+              <div key={row.student.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-700 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 text-center text-lg">{MEDALS[index] ?? `${index + 1}`}</span>
+                  {row.pet ? <PetVisual speciesKey={row.pet.speciesKey} level={row.pet.level} size="text-2xl" /> : <span className="text-2xl">🐾</span>}
+                  <span>{row.student.name}</span>
+                </div>
+                <div className="font-semibold text-amber-400">🏅 {row.badgeCount}</div>
               </div>
             ))}
           </div>

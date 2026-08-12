@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { PetStatus } from "@prisma/client"
 import { requireTeacher } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 import { createInviteCode } from "@/server/services/classroom.service"
@@ -10,9 +11,22 @@ export async function GET() {
     const teacher = await requireTeacher()
     const classrooms = await prisma.classroom.findMany({
       where: { teacherId: teacher.teacherProfileId },
-      include: { _count: { select: { students: true } }, pet: true },
+      include: { _count: { select: { students: true } } },
       orderBy: { createdAt: "desc" },
     })
+
+    const classroomIds = classrooms.map((classroom) => classroom.id)
+    const graduatedRows = classroomIds.length > 0
+      ? await prisma.studentPet.findMany({
+          where: { status: PetStatus.GRADUATED, student: { classroomId: { in: classroomIds } } },
+          select: { student: { select: { classroomId: true } } },
+        })
+      : []
+    const graduatedByClassroom = new Map<string, number>()
+    for (const row of graduatedRows) {
+      const classroomId = row.student.classroomId
+      graduatedByClassroom.set(classroomId, (graduatedByClassroom.get(classroomId) ?? 0) + 1)
+    }
 
     return jsonOk({
       items: classrooms.map((classroom) => ({
@@ -21,7 +35,7 @@ export async function GET() {
         grade: classroom.grade,
         schoolName: classroom.schoolName,
         studentCount: classroom._count.students,
-        petLevel: classroom.pet?.level ?? 1,
+        graduatedPetCount: graduatedByClassroom.get(classroom.id) ?? 0,
       })),
     })
   } catch (error) {
@@ -44,7 +58,6 @@ export async function POST(request: NextRequest) {
         grade: body.grade ?? null,
         schoolName: body.schoolName ?? null,
         inviteCode: createInviteCode(),
-        pet: { create: { name: "云朵龙", species: "dragon" } },
       },
     })
 

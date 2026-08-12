@@ -75,11 +75,14 @@ enum CheckinScheduleType {
   CUSTOM
 }
 
-enum PetMood {
-  HAPPY
-  NORMAL
-  TIRED
-  EXCITED
+enum PetStatus {
+  GROWING
+  GRADUATED
+}
+
+enum BadgeStatus {
+  AVAILABLE
+  CONSUMED
 }
 
 model User {
@@ -155,15 +158,15 @@ model Classroom {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  teacher      TeacherProfile     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  students     Student[]
-  groups       Group[]
-  pointRules   PointRule[]
-  pointTxs     PointTransaction[]
-  checkinTasks CheckinTask[]
-  pet          Pet?
-  rewardItems  RewardItem[]
-  aiJobs       AiJob[]
+  teacher        TeacherProfile   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students       Student[]
+  groups         Group[]
+  pointRules     PointRule[]
+  pointTxs       PointTransaction[]
+  checkinTasks   CheckinTask[]
+  rewardItems    RewardItem[]
+  aiJobs         AiJob[]
+  petLevelConfig PetLevelConfig[]
 
   @@index([teacherId])
 }
@@ -204,6 +207,8 @@ model Student {
   pointTxs       PointTransaction[]
   checkinRecords CheckinRecord[]
   redemptions    RewardRedemption[]
+  studentPets    StudentPet[]
+  badges         Badge[]
 
   @@index([classroomId])
   @@index([groupId])
@@ -236,8 +241,8 @@ model PointTransaction {
   ruleId          String?
   reversalOfId    String?                @unique
   checkinRecordId String?                @unique
-  redemptionId    String?                @unique
   idempotencyKey  String?                @unique
+  batchKey        String?
   delta           Int
   reason          String
   source          PointTransactionSource @default(MANUAL)
@@ -253,13 +258,13 @@ model PointTransaction {
   reversalOf    PointTransaction? @relation("PointTransactionReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
   reversal      PointTransaction? @relation("PointTransactionReversal")
   checkinRecord CheckinRecord?    @relation(fields: [checkinRecordId], references: [id], onDelete: SetNull)
-  redemption    RewardRedemption? @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
   growthLog     PetGrowthLog?
 
   @@index([classroomId, createdAt])
   @@index([studentId, createdAt])
   @@index([groupId, createdAt])
   @@index([teacherId, createdAt])
+  @@index([batchKey])
 }
 
 model CheckinTask {
@@ -307,35 +312,91 @@ model CheckinRecord {
   @@index([taskId, status])
 }
 
-model Pet {
+model PetSpecies {
   id          String   @id @default(cuid())
-  classroomId String   @unique
+  key         String   @unique
   name        String
-  species     String
-  level       Int      @default(1)
-  growthValue Int      @default(0)
-  mood        PetMood  @default(HAPPY)
-  hunger      Int      @default(100)
-  skinId      String?
+  category    String
+  visualSlots Json
+  sortOrder   Int      @default(0)
+  enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  classroom  Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  pets StudentPet[]
+
+  @@index([enabled])
+}
+
+model StudentPet {
+  id          String     @id @default(cuid())
+  studentId   String
+  speciesKey  String
+  name        String
+  level       Int        @default(1)
+  growthValue Int        @default(0)
+  status      PetStatus  @default(GROWING)
+  adoptionSeq Int        @default(1)
+  graduatedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  species    PetSpecies       @relation(fields: [speciesKey], references: [key])
   growthLogs PetGrowthLog[]
+  badge      Badge?
+
+  @@index([studentId, status])
+}
+
+model Badge {
+  id                     String       @id @default(cuid())
+  studentId              String
+  studentPetId           String       @unique
+  name                   String
+  visualKey              String
+  status                 BadgeStatus  @default(AVAILABLE)
+  earnedAt               DateTime     @default(now())
+  consumedAt             DateTime?
+  consumedByRedemptionId String?
+  createdAt              DateTime     @default(now())
+
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentPet StudentPet       @relation(fields: [studentPetId], references: [id], onDelete: Cascade)
+  consumedBy RewardRedemption? @relation(fields: [consumedByRedemptionId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, status])
+  @@index([consumedByRedemptionId])
+}
+
+model PetLevelConfig {
+  id             String @id @default(cuid())
+  classroomId    String
+  level          Int
+  requiredGrowth Int
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, level])
+}
+
+model SystemSetting {
+  key   String @id
+  value String
 }
 
 model PetGrowthLog {
   id                 String   @id @default(cuid())
-  petId              String
+  studentPetId       String
   pointTransactionId String   @unique
   growthDelta        Int
   reason             String
   createdAt          DateTime @default(now())
 
-  pet              Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  studentPet       StudentPet       @relation(fields: [studentPetId], references: [id], onDelete: Cascade)
   pointTransaction PointTransaction @relation(fields: [pointTransactionId], references: [id], onDelete: Cascade)
 
-  @@index([petId, createdAt])
+  @@index([studentPetId, createdAt])
 }
 
 model RewardItem {
@@ -343,7 +404,7 @@ model RewardItem {
   classroomId String
   name        String
   description String?
-  costPoints  Int
+  costBadges  Int
   stock       Int?
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -357,20 +418,21 @@ model RewardItem {
 
 model RewardRedemption {
   id           String                 @id @default(cuid())
-  rewardItemId String
-  studentId    String
-  pointsSpent  Int
-  status       RewardRedemptionStatus @default(PENDING)
-  handledById  String?
-  requestedAt  DateTime               @default(now())
+  rewardItemId     String
+  studentId        String
+  badgesSpent      Int
+  idempotencyKey   String?             @unique
+  status           RewardRedemptionStatus @default(PENDING)
+  handledById      String?
+  requestedAt      DateTime            @default(now())
   fulfilledAt  DateTime?
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 
-  rewardItem       RewardItem        @relation(fields: [rewardItemId], references: [id], onDelete: Cascade)
-  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  handledBy        TeacherProfile?   @relation("RewardHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
-  pointTransaction PointTransaction?
+  rewardItem     RewardItem        @relation(fields: [rewardItemId], references: [id], onDelete: Cascade)
+  student        Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  handledBy      TeacherProfile?   @relation("RewardHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  consumedBadges Badge[]
 
   @@index([studentId, status])
   @@index([rewardItemId, status])

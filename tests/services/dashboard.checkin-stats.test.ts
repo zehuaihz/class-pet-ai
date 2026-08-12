@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const dashboardMocks = vi.hoisted(() => ({
-  getClassroomPet: vi.fn(),
   studentFindMany: vi.fn(),
   studentCount: vi.fn(),
+  studentPetCount: vi.fn(),
+  badgeCount: vi.fn(),
   pointTransactionFindMany: vi.fn(),
   checkinTaskFindMany: vi.fn(),
   checkinRecordCount: vi.fn(),
@@ -15,21 +16,20 @@ vi.mock("@/server/db/prisma", () => ({
       findMany: dashboardMocks.studentFindMany,
       count: dashboardMocks.studentCount,
     },
+    studentPet: { count: dashboardMocks.studentPetCount },
+    badge: { count: dashboardMocks.badgeCount },
     pointTransaction: { findMany: dashboardMocks.pointTransactionFindMany },
     checkinTask: { findMany: dashboardMocks.checkinTaskFindMany },
     checkinRecord: { count: dashboardMocks.checkinRecordCount },
   },
 }))
 
-vi.mock("@/server/services/pet-growth.service", () => ({
-  getClassroomPet: dashboardMocks.getClassroomPet,
-}))
-
 import { getClassroomDashboard } from "@/server/services/dashboard.service"
 
 describe("dashboard check-in statistics", () => {
   beforeEach(() => {
-    dashboardMocks.getClassroomPet.mockResolvedValue(null)
+    dashboardMocks.studentPetCount.mockResolvedValue(0)
+    dashboardMocks.badgeCount.mockResolvedValue(0)
     dashboardMocks.studentFindMany.mockResolvedValue([])
     dashboardMocks.studentCount.mockResolvedValue(5)
     dashboardMocks.pointTransactionFindMany.mockResolvedValue([])

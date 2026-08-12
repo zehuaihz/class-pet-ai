@@ -1,10 +1,14 @@
+import { PetStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { getClassroomPet } from "@/server/services/pet-growth.service"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
 
 export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string) {
-  const [pet, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
-    getClassroomPet(classroomId),
+  const [zoo, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
+    Promise.all([
+      prisma.studentPet.count({ where: { status: PetStatus.GRADUATED, student: { classroomId } } }),
+      prisma.studentPet.count({ where: { status: PetStatus.GROWING, student: { classroomId } } }),
+      prisma.badge.count({ where: { student: { classroomId }, status: "AVAILABLE" } }),
+    ]).then(([graduatedCount, growingCount, availableBadges]) => ({ graduatedCount, growingCount, availableBadges })),
     prisma.student.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { totalPoints: "desc" }, take: 3 }),
     prisma.pointTransaction.findMany({ where: { classroomId }, orderBy: { createdAt: "desc" }, take: 5, include: { student: true, group: true } }),
     prisma.checkinTask.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 5 }),
@@ -25,7 +29,7 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
       pointCount: todayTransactions.reduce((sum, tx) => sum + tx.delta, 0),
       missedCount,
     },
-    pet,
+    zoo,
     topStudents: students,
     recentTransactions,
     activeTasks,

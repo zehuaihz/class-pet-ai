@@ -11,7 +11,7 @@ import {
 
 type DashboardPayload = {
   today: { checkinRate: number; pointCount: number; missedCount: number }
-  pet: { name: string; level: number }
+  zoo: { graduatedCount: number; growingCount: number; availableBadges: number }
   topStudents: Array<{ id: string; name: string; totalPoints: number }>
   activeTasks: Array<{ id: string; title: string }>
   recentTransactions: Array<{ id: string; reason: string; delta: number }>
@@ -94,8 +94,8 @@ export default function DashboardPage() {
           {[
             ["打卡率", dashboard ? `${Math.round(dashboard.today.checkinRate * 100)}%` : "--"],
             ["今日加分", dashboard ? `${dashboard.today.pointCount}` : "--"],
-            ["待补卡", dashboard ? `${dashboard.today.missedCount}` : "--"],
-            ["宠物等级", dashboard ? `Lv.${dashboard.pet.level}` : "--"],
+            ["在养宠物", dashboard ? `${dashboard.zoo.growingCount}` : "--"],
+            ["毕业徽章", dashboard ? `${dashboard.zoo.availableBadges}` : "--"],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl bg-white p-5 shadow-sm">
               <div className="text-sm text-slate-500">{label}</div>
@@ -110,6 +110,7 @@ export default function DashboardPage() {
               <Link href="/classrooms/new" className="rounded-lg bg-green-600 px-4 py-2 text-white">创建班级</Link>
               <Link href="/classrooms" className="rounded-lg border px-4 py-2">班级列表</Link>
               <Link href={`/classrooms/${classroomId}/students`} className="rounded-lg border px-4 py-2">学生管理</Link>
+              <Link href={`/classrooms/${classroomId}/zoo`} className="rounded-lg border px-4 py-2">动物园</Link>
               <Link href={`/classrooms/${classroomId}/points`} className="rounded-lg border px-4 py-2">积分管理</Link>
             </div>
           </div>

@@ -20,14 +20,6 @@ export async function seedClassroomForTeacher(input: {
     },
   })
 
-  const pet = await prisma.pet.create({
-    data: {
-      classroomId: classroom.id,
-      name: "云朵龙",
-      species: "dragon",
-    },
-  })
-
   const students = await Promise.all(
     (input.students ?? []).map((student) =>
       prisma.student.create({
@@ -60,7 +52,6 @@ export async function seedClassroomForTeacher(input: {
     teacherUser,
     teacher: teacherProfile,
     classroom,
-    pet,
     students,
   }
 }

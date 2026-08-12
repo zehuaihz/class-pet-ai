@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
 import { apiRequest } from "@/lib/api-client"
 
-interface RewardItem { id: string; name: string; costPoints: number; stock: number | null; enabled: boolean }
+interface RewardItem { id: string; name: string; costBadges: number; stock: number | null; enabled: boolean }
 interface Redemption { id: string; status: string; student: { name: string }; rewardItem: { name: string } }
 
 export default function RewardsPage() {
@@ -42,7 +42,7 @@ export default function RewardsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div><h1 className="text-2xl font-bold">奖励兑换</h1><p className="text-slate-600">管理奖励商品和兑换申请。</p></div>
+        <div><h1 className="text-2xl font-bold">小卖部</h1><p className="text-slate-600">学生用毕业徽章兑换奖励，教师审核与履约。</p></div>
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         <section className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="font-semibold">奖励商品</h2>
@@ -50,7 +50,7 @@ export default function RewardsPage() {
             {items.map((item) => (
               <div key={item.id} className="rounded-lg border p-4">
                 <div className="font-medium">{item.name}</div>
-                <div className="text-sm text-slate-500">{item.costPoints} 分 · 库存 {item.stock ?? "无限"}</div>
+                <div className="text-sm text-slate-500">🏅 {item.costBadges} 徽章 · 库存 {item.stock ?? "无限"}</div>
               </div>
             ))}
           </div>

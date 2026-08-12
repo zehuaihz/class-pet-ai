@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
 import { QuickAddModal } from "@/components/points/QuickAddModal"
+import { BatchFeedModal } from "@/components/pets/BatchFeedModal"
 
 type Student = { id: string; name: string; totalPoints: number }
 type Rule = { id: string; name: string; pointDelta: number }
@@ -20,6 +21,8 @@ export default function PointsPage() {
   const [error, setError] = useState<string | null>(null)
   const [rules, setRules] = useState<Rule[]>([])
   const [groups, setGroups] = useState<{ rank: number; name: string; totalPoints: number }[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [batchMode, setBatchMode] = useState<"batch" | "all" | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -97,9 +100,21 @@ export default function PointsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">积分管理</h1>
-            <p className="text-slate-600">快捷加分、流水追踪、排行榜和撤销。</p>
+            <p className="text-slate-600">单人 / 批量 / 全班加减分，流水追踪与撤销。</p>
           </div>
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white" onClick={() => setOpen(true)} disabled={students.length === 0}>快捷加分</button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="rounded-lg border px-4 py-2 text-green-700 disabled:opacity-40"
+              onClick={() => setBatchMode("batch")}
+              disabled={selectedIds.size === 0}
+            >
+              批量加减分（{selectedIds.size}）
+            </button>
+            <button className="rounded-lg border px-4 py-2 text-green-700 disabled:opacity-40" onClick={() => setBatchMode("all")} disabled={students.length === 0}>
+              全班加减分
+            </button>
+            <button className="rounded-lg bg-green-600 px-4 py-2 text-white" onClick={() => setOpen(true)} disabled={students.length === 0}>快捷加分</button>
+          </div>
         </div>
 
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
@@ -129,10 +144,22 @@ export default function PointsPage() {
             <div className="mt-4 space-y-3">
               {students.map((student, index) => (
                 <div key={student.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <div className="font-medium">{index + 1}. {student.name}</div>
-                    <div className="text-sm text-slate-500">{student.totalPoints} 分</div>
-                  </div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(student.id)}
+                      onChange={(event) => {
+                        const next = new Set(selectedIds)
+                        if (event.target.checked) next.add(student.id)
+                        else next.delete(student.id)
+                        setSelectedIds(next)
+                      }}
+                    />
+                    <span>
+                      <span className="font-medium">{index + 1}. {student.name}</span>
+                      <span className="text-sm text-slate-500"> · {student.totalPoints} 分</span>
+                    </span>
+                  </label>
                   <button className="rounded-lg border px-3 py-1 text-sm" onClick={() => {
                     setSelectedStudent(student)
                     setOpen(true)
@@ -161,6 +188,18 @@ export default function PointsPage() {
           defaultRules={rules}
           onOpenChange={setOpen}
           onSubmit={handleSubmit}
+        />
+        <BatchFeedModal
+          open={batchMode != null}
+          classroomId={classroomId}
+          mode={batchMode === "all" ? "all" : "batch"}
+          targetCount={batchMode === "all" ? students.length : selectedIds.size}
+          studentIds={batchMode === "all" ? [] : [...selectedIds]}
+          onClose={() => setBatchMode(null)}
+          onDone={async () => {
+            setSelectedIds(new Set())
+            await loadData()
+          }}
         />
       </div>
     </AppShell>

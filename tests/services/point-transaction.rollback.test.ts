@@ -5,9 +5,7 @@ const dbMocks = vi.hoisted(() => ({
   pointTransactionCreate: vi.fn(),
   studentFindFirst: vi.fn(),
   studentUpdate: vi.fn(),
-  petFindUnique: vi.fn(),
-  petUpdate: vi.fn(),
-  petGrowthLogCreate: vi.fn(),
+  studentPetFindFirst: vi.fn(),
   transaction: vi.fn(),
   assertTeacherOwnsClassroom: vi.fn(),
 }))
@@ -52,8 +50,7 @@ describe("reversePointTransaction", () => {
       create: dbMocks.pointTransactionCreate,
     },
     student: { findFirst: dbMocks.studentFindFirst, update: dbMocks.studentUpdate },
-    pet: { findUnique: dbMocks.petFindUnique, update: dbMocks.petUpdate },
-    petGrowthLog: { create: dbMocks.petGrowthLogCreate },
+    studentPet: { findFirst: dbMocks.studentPetFindFirst },
   }
 
   beforeEach(() => {
@@ -67,7 +64,7 @@ describe("reversePointTransaction", () => {
     dbMocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx))
     dbMocks.studentFindFirst.mockResolvedValue({ id: original.studentId, classroomId: original.classroomId })
     dbMocks.studentUpdate.mockResolvedValue({ totalPoints: 95 })
-    dbMocks.petFindUnique.mockResolvedValue(null)
+    dbMocks.studentPetFindFirst.mockResolvedValue(null)
     dbMocks.pointTransactionCreate.mockImplementation(async () => {
       existingReversal = reversal
       return reversal

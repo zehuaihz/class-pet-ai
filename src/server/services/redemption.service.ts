@@ -1,54 +1,72 @@
-import { PointTransactionSource, RewardRedemptionStatus } from "@prisma/client"
+import { BadgeStatus, Prisma, RewardRedemptionStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { assertTeacherOwnsClassroom } from "@/server/services/classroom.service"
-import { createPointTransactionInTx } from "@/server/services/point-transaction.service"
 import { AppError } from "@/server/utils/errors"
 
+/**
+ * Redeem a reward item using badges as currency. Consumes the student's oldest
+ * available badges (FIFO) atomically; a race-safe count check rolls the whole
+ * transaction back when badges were overspent concurrently. A concurrent
+ * duplicate with the same idempotency key is collapsed into the existing
+ * redemption instead of surfacing a unique-constraint error.
+ */
 export async function requestRedemption(studentId: string, rewardItemId: string, idempotencyKey?: string) {
-  return prisma.$transaction(async (tx) => {
-    const item = await tx.rewardItem.findUnique({ where: { id: rewardItemId } })
-    if (!item || !item.enabled) throw new AppError("NOT_FOUND", "Reward item not available", 404)
-    const classroom = await tx.classroom.findUnique({ where: { id: item.classroomId }, select: { teacherId: true } })
-    if (!classroom) throw new AppError("NOT_FOUND", "Classroom not found", 404)
-    const student = await tx.student.findUnique({ where: { id: studentId } })
-    if (!student || student.classroomId !== item.classroomId) throw new AppError("FORBIDDEN", "Student not in classroom", 403)
-    if (student.status !== "ACTIVE") throw new AppError("FORBIDDEN", "Student not active", 403)
-    if (student.totalPoints < item.costPoints) throw new AppError("CONFLICT", "Insufficient points", 409)
+  const execute = () =>
+    prisma.$transaction(async (tx) => {
+      const item = await tx.rewardItem.findUnique({ where: { id: rewardItemId } })
+      if (!item || !item.enabled) throw new AppError("NOT_FOUND", "Reward item not available", 404)
 
-    if (idempotencyKey) {
-      const existing = await tx.pointTransaction.findUnique({ where: { idempotencyKey } })
-      if (existing?.redemptionId) {
-        const redemption = await tx.rewardRedemption.findUnique({ where: { id: existing.redemptionId } })
-        if (redemption) return redemption
+      const student = await tx.student.findUnique({ where: { id: studentId } })
+      if (!student || student.classroomId !== item.classroomId) throw new AppError("FORBIDDEN", "Student not in classroom", 403)
+      if (student.status !== "ACTIVE") throw new AppError("FORBIDDEN", "Student not active", 403)
+
+      if (idempotencyKey) {
+        const existing = await tx.rewardRedemption.findUnique({ where: { idempotencyKey } })
+        if (existing) return existing
       }
-    }
 
-    if (item.stock !== null) {
-      const reserved = await tx.rewardItem.updateMany({
-        where: { id: item.id, stock: { gt: 0 } },
-        data: { stock: { decrement: 1 } },
+      const availableBadges = await tx.badge.findMany({
+        where: { studentId: student.id, status: BadgeStatus.AVAILABLE },
+        orderBy: { earnedAt: "asc" },
+        take: item.costBadges,
       })
-      if (reserved.count === 0) throw new AppError("CONFLICT", "Out of stock", 409)
-    }
+      if (availableBadges.length < item.costBadges) throw new AppError("CONFLICT", "Insufficient badges", 409)
 
-    const redemption = await tx.rewardRedemption.create({
-      data: { rewardItemId: item.id, studentId: student.id, pointsSpent: item.costPoints, status: RewardRedemptionStatus.PENDING },
+      if (item.stock !== null) {
+        const reserved = await tx.rewardItem.updateMany({
+          where: { id: item.id, stock: { gt: 0 } },
+          data: { stock: { decrement: 1 } },
+        })
+        if (reserved.count === 0) throw new AppError("CONFLICT", "Out of stock", 409)
+      }
+
+      const redemption = await tx.rewardRedemption.create({
+        data: {
+          rewardItemId: item.id,
+          studentId: student.id,
+          badgesSpent: item.costBadges,
+          idempotencyKey: idempotencyKey ?? null,
+          status: RewardRedemptionStatus.PENDING,
+        },
+      })
+
+      const consumed = await tx.badge.updateMany({
+        where: { id: { in: availableBadges.map((badge) => badge.id) }, status: BadgeStatus.AVAILABLE },
+        data: { status: BadgeStatus.CONSUMED, consumedAt: new Date(), consumedByRedemptionId: redemption.id },
+      })
+      if (consumed.count !== item.costBadges) throw new AppError("CONFLICT", "Insufficient badges", 409)
+
+      return redemption
     })
 
-    await createPointTransactionInTx(tx, {
-      actorTeacherId: classroom.teacherId,
-      classroomId: item.classroomId,
-      studentId: student.id,
-      redemptionId: redemption.id,
-      idempotencyKey: idempotencyKey ?? null,
-      delta: -item.costPoints,
-      reason: item.name,
-      source: PointTransactionSource.REWARD,
-      meta: { rewardItemId: item.id, redemptionId: redemption.id },
-    })
-
-    return redemption
-  })
+  try {
+    return await execute()
+  } catch (error: unknown) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error
+    const existing = await prisma.rewardRedemption.findUnique({ where: { idempotencyKey: idempotencyKey ?? "" } })
+    if (!existing) throw error
+    return existing
+  }
 }
 
 async function loadOwnedRedemption(actorTeacherId: string, redemptionId: string) {
@@ -90,20 +108,16 @@ export async function cancelRedemption(actorTeacherId: string, redemptionId: str
     })
     if (updated.count === 0) return tx.rewardRedemption.findUnique({ where: { id: redemptionId } })
 
-    const classroom = await tx.classroom.findUnique({ where: { id: redemption.rewardItem.classroomId }, select: { teacherId: true } })
     if (redemption.rewardItem.stock !== null) {
       await tx.rewardItem.update({ where: { id: redemption.rewardItemId }, data: { stock: { increment: 1 } } })
     }
-    await createPointTransactionInTx(tx, {
-      actorTeacherId: classroom?.teacherId ?? actorTeacherId,
-      classroomId: redemption.rewardItem.classroomId,
-      studentId: redemption.studentId,
-      idempotencyKey: `cancel:${redemption.id}`,
-      delta: redemption.pointsSpent,
-      reason: `撤销兑换：${redemption.rewardItem.name}`,
-      source: PointTransactionSource.ROLLBACK,
-      meta: { cancelledRedemptionId: redemption.id },
+
+    // Refund the consumed badges back to available.
+    await tx.badge.updateMany({
+      where: { consumedByRedemptionId: redemptionId, status: BadgeStatus.CONSUMED },
+      data: { status: BadgeStatus.AVAILABLE, consumedAt: null, consumedByRedemptionId: null },
     })
+
     return tx.rewardRedemption.findUnique({ where: { id: redemptionId } })
   })
 }

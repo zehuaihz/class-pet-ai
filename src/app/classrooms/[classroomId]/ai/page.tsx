@@ -8,7 +8,7 @@ import { AppShell } from "@/components/layout/AppShell"
 type DashboardPayload = {
   topStudents: Array<{ id: string; name: string; totalPoints: number }>
   activeTasks: Array<{ id: string; title: string }>
-  pet: { name: string; level: number }
+  zoo: { graduatedCount: number; growingCount: number; availableBadges: number }
 }
 
 export default function AiWorkbenchPage() {
@@ -48,7 +48,7 @@ export default function AiWorkbenchPage() {
           </Link>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="font-semibold">班情总结</div>
-            <div className="mt-2 text-sm text-slate-500">班级宠物 {dashboard?.pet.name ?? "云朵龙"} Lv.{dashboard?.pet.level ?? 8}</div>
+            <div className="mt-2 text-sm text-slate-500">宠物在养 {dashboard?.zoo.growingCount ?? 0} 只 · 毕业 {dashboard?.zoo.graduatedCount ?? 0} 只</div>
           </div>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="font-semibold">任务生成</div>
