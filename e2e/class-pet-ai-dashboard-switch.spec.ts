@@ -1,0 +1,81 @@
+import { expect, test } from "@playwright/test"
+
+// Verifies that switching class from the header switcher while on /dashboard
+// reloads the dashboard stats in place (URL stays /dashboard) rather than
+// navigating away, and that the persisted last class is honoured on load.
+
+test.describe("dashboard class switching", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/v1/classrooms", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          json: {
+            success: true,
+            data: {
+              items: [
+                { id: "class_1", name: "三年级2班", studentCount: 3, petLevel: 8 },
+                { id: "class_2", name: "四年级1班", studentCount: 2, petLevel: 3 },
+              ],
+            },
+            error: null,
+            meta: null,
+          },
+        })
+        return
+      }
+      await route.fulfill({ json: { success: true, data: { id: "class_1", name: "三年级2班" }, error: null, meta: null } })
+    })
+
+    await page.route("**/api/v1/classrooms/class_1/dashboard", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            today: { checkinRate: 0.85, pointCount: 42, missedCount: 6 },
+            pet: { name: "云朵龙", level: 8 },
+            topStudents: [{ id: "s_1", name: "小明", totalPoints: 128 }],
+            activeTasks: [{ id: "t_1", title: "阅读 20 分钟" }],
+            recentTransactions: [{ id: "pt_1", reason: "课堂发言", delta: 2 }],
+          },
+          error: null,
+          meta: null,
+        },
+      })
+    })
+
+    await page.route("**/api/v1/classrooms/class_2/dashboard", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: {
+            today: { checkinRate: 0.5, pointCount: 7, missedCount: 1 },
+            pet: { name: "小火龙", level: 3 },
+            topStudents: [{ id: "s_3", name: "小华", totalPoints: 55 }],
+            activeTasks: [],
+            recentTransactions: [{ id: "pt_9", reason: "作业优秀", delta: 3 }],
+          },
+          error: null,
+          meta: null,
+        },
+      })
+    })
+  })
+
+  test("switching class updates dashboard stats in place", async ({ page }) => {
+    await page.goto("/dashboard")
+
+    // Loads with the first class (class_1) by default.
+    await expect(page.getByText("85%")).toBeVisible()
+    await expect(page.getByText("Lv.8")).toBeVisible()
+    await expect(page).toHaveURL(/\/dashboard$/)
+
+    // Switch to 四年级1班 from the header switcher.
+    await page.getByLabel("班级切换器").selectOption("class_2")
+
+    // Stats update to class_2 without leaving /dashboard.
+    await expect(page.getByText("50%")).toBeVisible()
+    await expect(page.getByText("Lv.3")).toBeVisible()
+    await expect(page.getByText("作业优秀 · +3")).toBeVisible()
+    await expect(page).toHaveURL(/\/dashboard$/)
+  })
+})

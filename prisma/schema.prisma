@@ -1,0 +1,408 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  TEACHER
+  STUDENT
+  PARENT
+  ADMIN
+}
+
+enum TaskStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CheckinStatus {
+  PENDING
+  COMPLETED
+  APPROVED
+  REJECTED
+  MISSED
+}
+
+enum AiJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum AiJobType {
+  COMMENT_DRAFT
+  HOMEWORK_GENERATE
+  CLASS_SUMMARY
+  STUDENT_INSIGHT
+}
+
+enum RewardRedemptionStatus {
+  PENDING
+  APPROVED
+  FULFILLED
+  CANCELLED
+}
+
+enum PointTransactionSource {
+  MANUAL
+  CHECKIN
+  SYSTEM
+  AI
+  IMPORT
+  REWARD
+  ROLLBACK
+}
+
+enum CheckinTaskType {
+  READING
+  HOMEWORK
+  SPORT
+  MEMORIZATION
+  CUSTOM
+}
+
+enum CheckinScheduleType {
+  ONE_TIME
+  DAILY
+  WEEKDAYS
+  WEEKLY
+  CUSTOM
+}
+
+enum PetMood {
+  HAPPY
+  NORMAL
+  TIRED
+  EXCITED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  role           UserRole
+  name           String
+  email          String?  @unique
+  phone          String?  @unique
+  avatarUrl      String?
+  status         String   @default("ACTIVE")
+  sessionVersion Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  teacherProfile TeacherProfile?
+  studentAccount Student?
+  credentials    PasswordCredential[]
+  children       ParentStudent[]      @relation("ParentStudentParent")
+}
+
+model PasswordCredential {
+  id           String   @id @default(cuid())
+  userId       String
+  passwordHash String
+  passwordSalt String
+  requireReset Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ParentStudent {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  createdAt DateTime @default(now())
+
+  parent  User    @relation("ParentStudentParent", fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+}
+
+model TeacherProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  schoolName String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classrooms         Classroom[]
+  pointTxs           PointTransaction[]
+  approvedCheckins   CheckinRecord[]    @relation("CheckinApprovedBy")
+  handledRedemptions RewardRedemption[] @relation("RewardHandledBy")
+  aiJobs             AiJob[]
+  createdTasks       CheckinTask[]
+}
+
+model Classroom {
+  id            String    @id @default(cuid())
+  teacherId     String
+  name          String
+  grade         String?
+  schoolName    String?
+  inviteCode    String    @unique
+  inviteCodeExp DateTime?
+  isPublicRank  Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  teacher      TeacherProfile     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students     Student[]
+  groups       Group[]
+  pointRules   PointRule[]
+  pointTxs     PointTransaction[]
+  checkinTasks CheckinTask[]
+  pet          Pet?
+  rewardItems  RewardItem[]
+  aiJobs       AiJob[]
+
+  @@index([teacherId])
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  classroomId String
+  name        String
+  totalPoints Int      @default(0)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  students  Student[]
+  pointTxs  PointTransaction[]
+
+  @@index([classroomId])
+}
+
+model Student {
+  id          String   @id @default(cuid())
+  classroomId String
+  groupId     String?
+  userId      String?  @unique
+  name        String
+  avatarUrl   String?
+  studentNo   String?
+  totalPoints Int      @default(0)
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom      Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  group          Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  user           User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parents        ParentStudent[]
+  pointTxs       PointTransaction[]
+  checkinRecords CheckinRecord[]
+  redemptions    RewardRedemption[]
+
+  @@index([classroomId])
+  @@index([groupId])
+  @@index([classroomId, totalPoints])
+  @@index([classroomId, name])
+}
+
+model PointRule {
+  id          String   @id @default(cuid())
+  classroomId String
+  name        String
+  category    String?
+  pointDelta  Int
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  pointTxs  PointTransaction[]
+
+  @@index([classroomId])
+}
+
+model PointTransaction {
+  id              String                 @id @default(cuid())
+  classroomId     String
+  studentId       String?
+  groupId         String?
+  teacherId       String
+  ruleId          String?
+  reversalOfId    String?                @unique
+  checkinRecordId String?                @unique
+  redemptionId    String?                @unique
+  idempotencyKey  String?                @unique
+  delta           Int
+  reason          String
+  source          PointTransactionSource @default(MANUAL)
+  meta            Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  classroom     Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  student       Student?          @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  group         Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  teacher       TeacherProfile    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  rule          PointRule?        @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  reversalOf    PointTransaction? @relation("PointTransactionReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
+  reversal      PointTransaction? @relation("PointTransactionReversal")
+  checkinRecord CheckinRecord?    @relation(fields: [checkinRecordId], references: [id], onDelete: SetNull)
+  redemption    RewardRedemption? @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
+  growthLog     PetGrowthLog?
+
+  @@index([classroomId, createdAt])
+  @@index([studentId, createdAt])
+  @@index([groupId, createdAt])
+  @@index([teacherId, createdAt])
+}
+
+model CheckinTask {
+  id                 String              @id @default(cuid())
+  classroomId        String
+  createdByTeacherId String
+  title              String
+  description        String?
+  taskType           CheckinTaskType     @default(CUSTOM)
+  scheduleType       CheckinScheduleType @default(ONE_TIME)
+  deadlineAt         DateTime?
+  rewardPoints       Int                 @default(0)
+  requireEvidence    Boolean             @default(false)
+  status             TaskStatus          @default(ACTIVE)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  classroom        Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdByTeacher TeacherProfile  @relation(fields: [createdByTeacherId], references: [id], onDelete: Cascade)
+  records          CheckinRecord[]
+
+  @@index([classroomId, status])
+  @@index([createdByTeacherId])
+}
+
+model CheckinRecord {
+  id           String        @id @default(cuid())
+  taskId       String
+  studentId    String
+  status       CheckinStatus @default(PENDING)
+  evidenceUrl  String?
+  submittedAt  DateTime?
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  task             CheckinTask       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedBy       TeacherProfile?   @relation("CheckinApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  pointTransaction PointTransaction?
+
+  @@unique([taskId, studentId])
+  @@index([studentId, status])
+  @@index([taskId, status])
+}
+
+model Pet {
+  id          String   @id @default(cuid())
+  classroomId String   @unique
+  name        String
+  species     String
+  level       Int      @default(1)
+  growthValue Int      @default(0)
+  mood        PetMood  @default(HAPPY)
+  hunger      Int      @default(100)
+  skinId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom  Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  growthLogs PetGrowthLog[]
+}
+
+model PetGrowthLog {
+  id                 String   @id @default(cuid())
+  petId              String
+  pointTransactionId String   @unique
+  growthDelta        Int
+  reason             String
+  createdAt          DateTime @default(now())
+
+  pet              Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  pointTransaction PointTransaction @relation(fields: [pointTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([petId, createdAt])
+}
+
+model RewardItem {
+  id          String   @id @default(cuid())
+  classroomId String
+  name        String
+  description String?
+  costPoints  Int
+  stock       Int?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom   Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  redemptions RewardRedemption[]
+
+  @@index([classroomId, enabled])
+}
+
+model RewardRedemption {
+  id           String                 @id @default(cuid())
+  rewardItemId String
+  studentId    String
+  pointsSpent  Int
+  status       RewardRedemptionStatus @default(PENDING)
+  handledById  String?
+  requestedAt  DateTime               @default(now())
+  fulfilledAt  DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  rewardItem       RewardItem        @relation(fields: [rewardItemId], references: [id], onDelete: Cascade)
+  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  handledBy        TeacherProfile?   @relation("RewardHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  pointTransaction PointTransaction?
+
+  @@index([studentId, status])
+  @@index([rewardItemId, status])
+}
+
+model AiJob {
+  id            String      @id @default(cuid())
+  classroomId   String
+  teacherId     String
+  type          AiJobType
+  provider      String?
+  modelName     String?
+  inputJson     Json
+  outputJson    Json?
+  status        AiJobStatus @default(PENDING)
+  errorMessage  String?
+  attemptCount  Int         @default(0)
+  maxAttempts   Int         @default(5)
+  availableAt   DateTime    @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  lockedAt      DateTime?
+  lastErrorCode String?
+  inputTokens   Int?
+  outputTokens  Int?
+  latencyMs     Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  classroom Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([classroomId, type, status])
+  @@index([teacherId, createdAt])
+}
