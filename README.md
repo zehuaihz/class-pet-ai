@@ -58,12 +58,37 @@
 npm install
 cp .env.example .env
 docker compose up -d postgres
-npx prisma migrate dev        # 应用 baseline + zoo_v1 迁移（本地无迁移时用 db push）
+
+# 空库：直接应用迁移链（baseline → transaction_integrity → zoo_v1）
+npx prisma migrate dev
+
+# 已有 v1 旧数据但没有迁移历史（之前用 db push 同步过 schema）：
+# migrate deploy 会报 P3005，此时重置后重放迁移
+# npx prisma migrate reset --force
+
 npm run db:seed
 npm run dev
 ```
 
 打开 <http://localhost:3000>，使用 `.env` 中的 `TEACHER_LOGIN_EMAIL` 与 `TEACHER_LOGIN_PASSWORD` 登录（默认 `teacher@example.com` / `password123`）。`prisma/seed.ts` 固定使用该邮箱，会创建演示班级、10 个宠物品种、默认成长阈值并给演示学生分配随机宠物。
+
+> **Linux / Debian 容器运行**：`prisma/schema.prisma` 的 `generator` 已配置
+> `binaryTargets = ["native", "debian-openssl-1.0.x"]`，容器内先执行
+> `npx prisma generate` 再 seed / dev，否则会报
+> `Prisma Client could not locate the Query Engine for runtime "debian-openssl-1.0.x"`。
+
+> **端口被占用**：`predev` 只自动释放本项目残留的 dev server；若 3000 被其他进程占用，
+> 用 `ss -tlnp | grep :3000` 找到 PID 后 `kill -9 <PID>`，或改用 `npx next dev -p 3001`。
+
+### 后台运行（服务端 / 容器）
+
+```bash
+nohup npm run dev > /tmp/class-pet-ai.log 2>&1 &
+tail -f /tmp/class-pet-ai.log    # 查看日志
+# 停止：kill $(lsof -tiTCP:3000 -sTCP:LISTEN)
+```
+
+生产场景建议用 `pm2`：`pm2 start "npm run start" --name class-pet-ai`。
 
 ### 建议体验路径
 
