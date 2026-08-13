@@ -1,6 +1,6 @@
 import { PetStatus, UserRole } from "@prisma/client"
 import { prisma } from "../src/server/db/prisma"
-import { DEFAULT_LEVEL_THRESHOLDS } from "../src/server/domain/student-pet-rules"
+import { DEFAULT_LEVEL_THRESHOLDS, MAX_PET_LEVEL } from "../src/server/domain/student-pet-rules"
 
 const SPECIES_SEED = [
   { key: "cat-orange", name: "橘猫", category: "cat" },
@@ -17,7 +17,7 @@ const SPECIES_SEED = [
 
 function buildVisualSlots(key: string): Record<string, string> {
   const slots: Record<string, string> = {}
-  for (let level = 1; level <= 10; level += 1) {
+  for (let level = 1; level <= MAX_PET_LEVEL; level += 1) {
     slots[String(level)] = `${key}-lv${level}`
   }
   return slots
@@ -70,16 +70,17 @@ async function main() {
     })
   }
 
-  // 1~10 级默认成长阈值（累计食物）
-  await prisma.$transaction(
-    DEFAULT_LEVEL_THRESHOLDS.map((requiredGrowth, index) =>
-      prisma.petLevelConfig.upsert({
-        where: { classroomId_level: { classroomId: classroom.id, level: index + 1 } },
-        update: { requiredGrowth },
-        create: { classroomId: classroom.id, level: index + 1, requiredGrowth },
-      }),
-    ),
-  )
+  // 1~MAX_PET_LEVEL 级默认成长阈值（累计食物）；先删后建，避免残留旧等级配置
+  await prisma.$transaction([
+    prisma.petLevelConfig.deleteMany({ where: { classroomId: classroom.id } }),
+    prisma.petLevelConfig.createMany({
+      data: DEFAULT_LEVEL_THRESHOLDS.map((requiredGrowth, index) => ({
+        classroomId: classroom.id,
+        level: index + 1,
+        requiredGrowth,
+      })),
+    }),
+  ])
 
   // 全局系统名称
   await prisma.systemSetting.upsert({

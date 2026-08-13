@@ -63,21 +63,21 @@ describe("createPointTransactionInTx pet feeding", () => {
 
   it("feeds the growing pet with a positive delta and logs the growth", async () => {
     setPet({ id: "pet_1", growthValue: 0, status: "GROWING" })
-    const result = await createPointTransactionInTx(makeTx(), input)
+    const result = await createPointTransactionInTx(makeTx(), { ...input, delta: 10 })
 
     expect(dbMocks.studentPetUpdate).toHaveBeenCalledWith({
       where: { id: "pet_1" },
-      data: { growthValue: 5, level: 2 },
+      data: { growthValue: 10, level: 2 },
     })
     expect(dbMocks.petGrowthLogCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         studentPetId: "pet_1",
         pointTransactionId: "tx_1",
-        growthDelta: 5,
+        growthDelta: 10,
         reason: "答对问题",
       }),
     })
-    expect(result.pet).toEqual({ id: "pet_1", level: 2, growthValue: 5, graduated: false })
+    expect(result.pet).toEqual({ id: "pet_1", level: 2, growthValue: 10, graduated: false })
   })
 
   it("removes food for a negative delta (progress regresses) and floors at zero", async () => {
@@ -94,7 +94,7 @@ describe("createPointTransactionInTx pet feeding", () => {
   })
 
   it("graduates the pet and mints a badge when food crosses the final threshold", async () => {
-    setPet({ id: "pet_1", growthValue: 90, status: "GROWING" })
+    setPet({ id: "pet_1", growthValue: 50, status: "GROWING" })
     const result = await createPointTransactionInTx(makeTx(), { ...input, delta: 10 })
 
     expect(dbMocks.badgeCreate).toHaveBeenCalledWith({
@@ -104,7 +104,7 @@ describe("createPointTransactionInTx pet feeding", () => {
         status: "AVAILABLE",
       }),
     })
-    expect(result.pet).toEqual({ id: "pet_1", level: 10, growthValue: 100, graduated: true })
+    expect(result.pet).toEqual({ id: "pet_1", level: 4, growthValue: 60, graduated: true })
     expect(result.badge).toEqual({ id: "badge_1" })
   })
 

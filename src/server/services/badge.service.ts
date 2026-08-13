@@ -1,7 +1,7 @@
 import { BadgeStatus, PetStatus, Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { assertTeacherOwnsClassroom } from "@/server/services/classroom.service"
-import { isGraduated, resolveVisualKey } from "@/server/domain/student-pet-rules"
+import { MAX_PET_LEVEL, isGraduated, resolveVisualKey } from "@/server/domain/student-pet-rules"
 import { AppError } from "@/server/utils/errors"
 
 type PetLike = {
@@ -14,7 +14,7 @@ type PetLike = {
 }
 
 /**
- * Mark a pet graduated and mint its Lv.10 badge.
+ * Mark a pet graduated and mint its max-level badge.
  * Idempotent: repeated calls return the existing badge / graduated pet.
  * Returns null when the pet has not reached the final threshold.
  */
@@ -40,8 +40,8 @@ export async function graduatePetInTx(
       data: {
         studentId: pet.studentId,
         studentPetId: pet.id,
-        name: `Lv.10 毕业 · ${pet.name}`,
-        visualKey: resolveVisualKey(pet.speciesKey, 10),
+        name: `Lv.${MAX_PET_LEVEL} 毕业 · ${pet.name}`,
+        visualKey: resolveVisualKey(pet.speciesKey, MAX_PET_LEVEL),
         status: BadgeStatus.AVAILABLE,
       },
     }))

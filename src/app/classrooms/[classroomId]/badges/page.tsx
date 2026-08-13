@@ -40,7 +40,7 @@ export default function BadgesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">徽章墙</h1>
-          <p className="text-slate-600">宠物养到 Lv.10 毕业即自动获得徽章；徽章可在小卖部兑换奖励。</p>
+          <p className="text-slate-600">宠物养到满级毕业即自动获得徽章；徽章可在小卖部兑换奖励。</p>
         </div>
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         {loading ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">加载中...</div> : null}

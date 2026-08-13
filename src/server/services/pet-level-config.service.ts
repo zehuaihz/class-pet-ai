@@ -12,7 +12,7 @@ import { AppError } from "@/server/utils/errors"
 type DbClient = Prisma.TransactionClient | typeof prisma
 
 /**
- * Read the cumulative food threshold per level (Lv1..Lv10) for a classroom.
+ * Read the cumulative food threshold per level for a classroom.
  * Falls back to defaults when the classroom has no configuration yet.
  */
 export async function getClassroomThresholds(classroomId: string, db: DbClient = prisma): Promise<number[]> {

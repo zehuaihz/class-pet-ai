@@ -1,25 +1,26 @@
 /**
  * Student pet growth rules.
  *
- * A pet starts at Lv1 and grows through Lv10. Levels are derived from the
- * cumulative food (growthValue) against a per-classroom threshold list, e.g.
+ * A pet starts at Lv1 and grows through Lv.MAX_PET_LEVEL. Levels are derived
+ * from the cumulative food (growthValue) against a per-classroom threshold
+ * list, e.g. with 4 levels:
  *   thresholds[0] = 0   (Lv1 requires 0 cumulative food)
- *   thresholds[1] = 5   (Lv2 requires 5)
- *   ...
- *   thresholds[9] = 100 (Lv10 requires 100 -> graduation)
+ *   thresholds[1] = 10  (Lv2 requires 10)
+ *   thresholds[2] = 30  (Lv3 requires 30)
+ *   thresholds[3] = 60  (Lv4 requires 60 -> graduation)
  */
 
-export const MAX_PET_LEVEL = 10
-export const PET_LEVEL_COUNT = 10
+export const MAX_PET_LEVEL = 4
+export const PET_LEVEL_COUNT = 4
 
-export const DEFAULT_LEVEL_THRESHOLDS = [0, 5, 10, 20, 30, 45, 60, 75, 90, 100] as const
+export const DEFAULT_LEVEL_THRESHOLDS = [0, 10, 30, 60] as const
 
 export type LevelThresholds = number[]
 
 /** Normalize a threshold list to the expected shape (10 levels, Lv1 = 0, non-negative). */
 export function normalizeLevelThresholds(input: unknown): LevelThresholds {
   if (!Array.isArray(input) || input.length !== PET_LEVEL_COUNT) {
-    throw new Error("Level thresholds must contain exactly 10 entries")
+    throw new Error(`Level thresholds must contain exactly ${PET_LEVEL_COUNT} entries`)
   }
   const thresholds = input.map((value) => Number(value))
   for (const value of thresholds) {
@@ -51,7 +52,7 @@ export function getStudentPetLevel(
   return Math.min(level, MAX_PET_LEVEL)
 }
 
-/** A pet reaches Lv10 once growth meets the final threshold. */
+/** A pet graduates once growth meets the final threshold. */
 export function isGraduated(
   growthValue: number,
   thresholds: LevelThresholds = [...DEFAULT_LEVEL_THRESHOLDS],

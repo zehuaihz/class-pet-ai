@@ -11,9 +11,9 @@ interface LevelConfig {
 }
 
 const LEVEL_PRESETS: Record<string, number[]> = {
-  默认: [0, 5, 10, 20, 30, 45, 60, 75, 90, 100],
-  宽松: [0, 3, 6, 12, 20, 30, 42, 56, 72, 90],
-  严格: [0, 10, 25, 45, 70, 100, 135, 175, 220, 270],
+  默认: [0, 10, 30, 60],
+  宽松: [0, 5, 15, 30],
+  严格: [0, 20, 50, 100],
 }
 
 export default function SettingsPage() {
@@ -86,8 +86,8 @@ export default function SettingsPage() {
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold">1~10 级成长阈值（累计食物）</h2>
-              <p className="mt-1 text-sm text-slate-500">宠物满级（Lv.10）毕业自动获得徽章。</p>
+              <h2 className="font-semibold">成长阈值（累计食物，满级毕业）</h2>
+              <p className="mt-1 text-sm text-slate-500">宠物满级毕业自动获得徽章；等级数由阈值条目数决定。</p>
             </div>
             <div className="flex gap-2">
               {(Object.keys(LEVEL_PRESETS) as Array<keyof typeof LEVEL_PRESETS>).map((name) => (
@@ -97,7 +97,7 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {config.map((item) => (
               <label key={item.level} className="block rounded-lg border p-3">
                 <span className="text-xs font-medium text-slate-500">Lv.{item.level}</span>
