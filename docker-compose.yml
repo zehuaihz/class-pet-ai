@@ -24,7 +24,9 @@ services:
     build: .
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/class_pet_ai
-      SESSION_SECRET: change-me
+      # 会话签名密钥：代码会拒绝弱密钥（change-me 等）且要求至少 32 字符。
+      # 生产请替换为强随机值：openssl rand -base64 32
+      SESSION_SECRET: replace-with-a-long-random-secret-of-at-least-32-chars
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       AI_PROVIDER: mock
       AI_API_KEY: ""
