@@ -2,8 +2,8 @@ import { NextRequest } from "next/server"
 import { requireTeacher } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 import { assertGroupBelongsToClassroom, assertTeacherOwnsClassroom } from "@/server/services/classroom.service"
+import { createStudent } from "@/server/services/student.service"
 import { jsonError, jsonOk } from "@/server/utils/api"
-import { AppError } from "@/server/utils/errors"
 
 export async function GET(request: NextRequest, context: { params: Promise<{ classroomId: string }> }) {
   try {
@@ -46,21 +46,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ cl
   try {
     const teacher = await requireTeacher()
     const { classroomId } = await context.params
-    await assertTeacherOwnsClassroom(teacher.teacherProfileId, classroomId)
 
     const body = await request.json()
-    const name = String(body.name ?? "").trim()
-    if (!name) throw new AppError("VALIDATION_ERROR", "student name required", 422)
-    if (body.groupId) await assertGroupBelongsToClassroom(String(body.groupId), classroomId)
-
-    const student = await prisma.student.create({
-      data: {
-        classroomId,
-        name,
-        studentNo: body.studentNo ?? null,
-        groupId: body.groupId ?? null,
-        avatarUrl: body.avatarUrl ?? null,
-      },
+    const student = await createStudent(teacher.teacherProfileId, classroomId, {
+      name: String(body.name ?? ""),
+      studentNo: body.studentNo ? String(body.studentNo) : null,
+      groupId: body.groupId ? String(body.groupId) : null,
+      avatarUrl: body.avatarUrl ? String(body.avatarUrl) : null,
+      petSpeciesKey: body.petSpeciesKey ? String(body.petSpeciesKey) : null,
     })
 
     return jsonOk(student)
