@@ -5,15 +5,18 @@ import { resolveVisualKey } from "@/server/domain/student-pet-rules"
 
 const SPECIES_EMOJI: Record<string, string> = {
   "cat-orange": "🐱",
-  "cat-black": "🐱",
-  "cat-white": "🐱",
   "dog-golden": "🐶",
   "dog-husky": "🐶",
   "dog-corgi": "🐶",
   "animal-panda": "🐼",
   "animal-rabbit": "🐰",
-  "animal-owl": "🦉",
   "animal-bear": "🐻",
+  "bird-parrot": "🦜",
+  "bird-pigeon": "🕊️",
+  "tiger": "🐯",
+  "tortoise": "🐢",
+  "phoenix": "🔥",
+  "dragon": "🐉",
 }
 
 function emojiFor(speciesKey: string): string {

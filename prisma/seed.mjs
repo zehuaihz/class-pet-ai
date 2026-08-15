@@ -1,22 +1,33 @@
-import { PetStatus, UserRole } from "@prisma/client"
-import { prisma } from "../src/server/db/prisma"
-import { DEFAULT_LEVEL_THRESHOLDS, MAX_PET_LEVEL } from "../src/server/domain/student-pet-rules"
+// 演示数据 seed。使用纯 JS（ESM）自包含实现，仅依赖 @prisma/client，
+// 因此可在本地（node prisma/seed.mjs）与 Docker 容器（runner 含 node + @prisma/client）中直接运行，
+// 无需 tsx 或项目源码（src/）。
+
+import { PetStatus, PrismaClient, UserRole } from "@prisma/client"
+
+const prisma = new PrismaClient()
+
+// 与 src/server/domain/student-pet-rules.ts 保持一致
+const MAX_PET_LEVEL = 4
+const DEFAULT_LEVEL_THRESHOLDS = [0, 10, 30, 60]
 
 const SPECIES_SEED = [
   { key: "cat-orange", name: "橘猫", category: "cat" },
-  { key: "cat-black", name: "黑猫", category: "cat" },
-  { key: "cat-white", name: "白猫", category: "cat" },
   { key: "dog-golden", name: "金毛", category: "dog" },
   { key: "dog-husky", name: "哈士奇", category: "dog" },
   { key: "dog-corgi", name: "柯基", category: "dog" },
   { key: "animal-panda", name: "熊猫", category: "animal" },
   { key: "animal-rabbit", name: "垂耳兔", category: "animal" },
-  { key: "animal-owl", name: "猫头鹰", category: "animal" },
   { key: "animal-bear", name: "小熊", category: "animal" },
-] as const
+  { key: "bird-parrot", name: "鹦鹉", category: "bird" },
+  { key: "bird-pigeon", name: "鸽子", category: "bird" },
+  { key: "tiger", name: "老虎", category: "animal" },
+  { key: "tortoise", name: "玄武", category: "animal" },
+  { key: "phoenix", name: "凤凰", category: "mythical" },
+  { key: "dragon", name: "龙", category: "mythical" },
+]
 
-function buildVisualSlots(key: string): Record<string, string> {
-  const slots: Record<string, string> = {}
+function buildVisualSlots(key) {
+  const slots = {}
   for (let level = 1; level <= MAX_PET_LEVEL; level += 1) {
     slots[String(level)] = `${key}-lv${level}`
   }
@@ -69,6 +80,12 @@ async function main() {
       },
     })
   }
+
+  // 只保留系统内置品种：禁用不在列表中的旧品种，保证「添加学生」的可选宠物与内置目录一致。
+  await prisma.petSpecies.updateMany({
+    where: { enabled: true, key: { notIn: SPECIES_SEED.map((s) => s.key) } },
+    data: { enabled: false },
+  })
 
   // 1~MAX_PET_LEVEL 级默认成长阈值（累计食物）；先删后建，避免残留旧等级配置
   await prisma.$transaction([

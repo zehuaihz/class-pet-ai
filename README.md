@@ -25,7 +25,7 @@
 | 教师登录 | 已实现 | 单教师配置账号、签名 Cookie 会话、教师身份校验 |
 | 班级管理 | 已实现 | 班级创建、列表、详情；班级列表页接入真实数据与毕业数统计 |
 | 学生管理 | 已实现 | 学生 API CRUD、Excel 模板导入（可下载模板/上传模板）、搜索、分组筛选；添加学生时可选择宠物品种 |
-| 宠物品种目录 | 已实现 | `PetSpecies` 内置 10 个品种（猫/狗/熊猫等），每级独立视觉插槽 |
+| 宠物品种目录 | 已实现 | `PetSpecies` 内置 13 个品种（橘猫/金毛/哈士奇/柯基/熊猫/垂耳兔/小熊/鹦鹉/鸽子/老虎/玄武/凤凰/龙），每级独立视觉插槽 |
 | 一键分配宠物 | 已实现 | 为未分配学生随机分配品种宠物（Lv1 幼崽），跳过已有宠物学生 |
 | 宠物成长 | 已实现 | 加分推进成长、扣分倒退（下限 0）；`PetGrowthLog` 完整留痕 |
 | 自定义成长阈值 | 已实现 | 每班级配置 1~4 级累计食物阈值，默认 `[0,10,30,60]` |
@@ -70,7 +70,7 @@ npm run db:seed
 npm run dev
 ```
 
-打开 <http://localhost:3000>，使用 `.env` 中的 `TEACHER_LOGIN_EMAIL` 与 `TEACHER_LOGIN_PASSWORD` 登录（默认 `teacher@example.com` / `password123`）。`prisma/seed.ts` 固定使用该邮箱，会创建演示班级、10 个宠物品种、默认成长阈值并给演示学生分配随机宠物。
+打开 <http://localhost:3000>，使用 `.env` 中的 `TEACHER_LOGIN_EMAIL` 与 `TEACHER_LOGIN_PASSWORD` 登录（默认 `teacher@example.com` / `password123`）。`prisma/seed.mjs` 固定使用该邮箱，会创建演示班级、13 个宠物品种（橘猫/金毛/哈士奇/柯基/熊猫/垂耳兔/小熊/鹦鹉/鸽子/老虎/玄武/凤凰/龙）、默认成长阈值并给演示学生分配随机宠物。
 
 > **Linux / Debian 容器运行**：`prisma/schema.prisma` 的 `generator` 已配置
 > `binaryTargets = ["native", "debian-openssl-1.0.x"]`，容器内先执行
@@ -151,7 +151,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 
 - **换格式**：默认是 `.png`，想用 jpg/webp 就改 `PetVisual.tsx` 里的路径后缀，并把同名图片放进去。
 - **换等级数量**：目前固定 4 级；调整 `MAX_PET_LEVEL` 前需同步 seed 与阈值配置。
-- **换品种**：在 `prisma/seed.ts` 的 `SPECIES_SEED` 里增删品种，并准备对应 `public/pets/<key>-lv1..10.png`；已分配该品种的学生会在重新 seed 后生效（或在数据库直接改 `PetSpecies` 表）。
+- **换品种**：在 `prisma/seed.mjs` 的 `SPECIES_SEED` 里增删品种，并准备对应 `public/pets/<key>-lv1..10.png`；已分配该品种的学生会在重新 seed 后生效（或在数据库直接改 `PetSpecies` 表）。
 - **徽章图**：徽章展示在「徽章墙」，目前用固定 🏅 emoji；若要换成满级形象，可将 `Badge.visualKey`（即 `<speciesKey>-lv4`）映射到 `public/pets/` 对应图片。
 
 ## 业务闭环
@@ -225,7 +225,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 ```text
 prisma/schema.prisma         数据模型事实源（PetSpecies/StudentPet/Badge/PetLevelConfig/SystemSetting）
 prisma/migrations/           迁移链（baseline / transaction_integrity / zoo_v1）
-prisma/seed.ts               演示数据
+prisma/seed.mjs              演示数据（自包含 JS，本地与 Docker 均可 node 直接运行）
 src/server/domain/           宠物成长规则（阈值推导、毕业判定、视觉 key）
 src/server/services/         学生宠物、徽章、积分喂食、榜单、配置、审计等服务
 src/server/utils/            错误与响应封装
@@ -306,7 +306,15 @@ docker compose up -d --build web  # 首次：构建并启动 web（redis 作为�
 docker compose ps                 # 确认 postgres / redis / web 均正常运行
 ```
 
-说明：仓库已含 `public/` 目录，Dockerfile 多阶段构建（standalone 输出）可直接 `--build`；容器启动时自动执行 `npx prisma migrate deploy` 再启动服务。日常更新用下方「热更新」流程即可。
+说明：仓库已含 `public/` 目录，Dockerfile 多阶段构建（standalone 输出）可直接 `--build`；容器启动时自动执行 `prisma migrate deploy` 再启动服务。日常更新用下方「热更新」流程即可。
+
+首次部署如需演示数据（演示班级 + 13 个内置宠物品种 + 演示学生），在容器启动后执行一次：
+
+```bash
+docker compose exec web node prisma/seed.mjs
+```
+
+（seed 为自包含 JS，可在 web 容器内直接运行；重复执行幂等，会禁用不在内置列表中的旧品种。）
 
 ### 热更新（服务器每次更新到最新版本）
 
