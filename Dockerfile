@@ -20,5 +20,9 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma CLI（迁移用）：prisma 在 devDependencies，standalone 输出不含它。
+# 必须复制仓库锁定的版本（6.x），否则 CMD 里的 npx 会拉取最新 Prisma 7，
+# 而 7 已移除 schema 中的 datasource url 语法，导致 migrate deploy 失败。
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
