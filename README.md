@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | 教师登录 | 已实现 | 单教师配置账号、签名 Cookie 会话、教师身份校验 |
 | 班级管理 | 已实现 | 班级创建、列表、详情；班级列表页接入真实数据与毕业数统计 |
-| 学生管理 | 已实现 | 学生 API CRUD、JSON 导入、搜索、分组筛选；页面含宠物分配入口 |
+| 学生管理 | 已实现 | 学生 API CRUD、Excel 模板导入（可下载模板/上传模板）、搜索、分组筛选；添加学生时可选择宠物品种 |
 | 宠物品种目录 | 已实现 | `PetSpecies` 内置 10 个品种（猫/狗/熊猫等），每级独立视觉插槽 |
 | 一键分配宠物 | 已实现 | 为未分配学生随机分配品种宠物（Lv1 幼崽），跳过已有宠物学生 |
 | 宠物成长 | 已实现 | 加分推进成长、扣分倒退（下限 0）；`PetGrowthLog` 完整留痕 |
@@ -88,7 +88,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 # 停止：kill $(lsof -tiTCP:3000 -sTCP:LISTEN)
 ```
 
-生产场景建议用 `pm2`：`pm2 start "npm run start" --name class-pet-ai`。
+生产场景建议用 `pm2`：`pm2 start "npm run start" --name class-pet-ai`。服务器每次更新到最新版本的完整操作见下方「[部署说明 → 热更新](#部署说明)」。
 
 ### 建议体验路径
 
@@ -190,7 +190,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 | `/dashboard` | 打卡率、今日加分、在养宠物、毕业徽章摘要 |
 | `/classrooms` | 班级列表（学生数、毕业宠物数） |
 | `/classrooms/new` | 创建班级 |
-| `/classrooms/[id]/students` | 学生 CRUD、导入、搜索、一键分配宠物、宠物进度卡 |
+| `/classrooms/[id]/students` | 学生 CRUD、Excel 模板导入、添加时可选宠物品种、搜索、一键分配宠物、宠物进度卡 |
 | `/classrooms/[id]/zoo` | 动物园墙：学生×宠物卡片、喂食/扣分、升级动画、毕业领徽章、领养下一只 |
 | `/classrooms/[id]/points` | 单人 / 批量 / 全班加减分、流水、撤销、小组榜 |
 | `/classrooms/[id]/badges` | 徽章墙（累计/可用/已消耗） |
@@ -301,12 +301,70 @@ npx prisma generate && npm run build
 ### Docker Compose
 
 ```bash
-docker compose up -d postgres     # 先只启动数据库
-docker compose up -d --build      # 需要 public/ 目录或修复 Dockerfile
-docker compose exec web npx prisma db push
+docker compose up -d postgres     # 首次：先启动数据库
+docker compose up -d --build web  # 首次：构建并启动 web（redis 作为依赖一并启动）
+docker compose ps                 # 确认 postgres / redis / web 均正常运行
 ```
 
-当前 Dockerfile 会无条件复制 `/app/public`，而仓库没有 `public/` 目录，直接 `--build` 可能失败；请先修复 Dockerfile 或补充 `public/`。
+说明：仓库已含 `public/` 目录，Dockerfile 多阶段构建（standalone 输出）可直接 `--build`；容器启动时自动执行 `npx prisma migrate deploy` 再启动服务。日常更新用下方「热更新」流程即可。
+
+### 热更新（服务器每次更新到最新版本）
+
+代码在开发机提交并推送后，到服务器上拉取最新代码并重新加载即可，无需重装环境。先确认服务器当前的部署方式，再选对应流程。
+
+> 通用提醒：
+> - 涉及数据库结构变更时，更新前先备份数据库（`pg_dump` 或云快照）。
+> - 更新后用 `curl -fsS http://localhost:3000/api/health/ready` 或直接打开页面确认服务正常。
+> - 服务器项目目录假设为 `/root/class-pet-ai`，路径不同请替换。
+
+#### 方式 A：Docker Compose
+
+```bash
+cd /root/class-pet-ai
+git pull                          # 拉取最新代码
+
+# 重新构建 web 镜像并重建容器；容器启动时自动执行 prisma migrate deploy 再启动服务
+docker compose up -d --build web
+
+docker compose ps                 # 确认 web 为 running / healthy
+docker compose logs -f --tail=100 web   # 查看启动日志
+```
+
+- 数据库（postgres）与 redis 一般无需重启；仅当它们本身要更新时才执行 `docker compose up -d postgres redis`。
+- 新增数据库迁移会自动应用（Dockerfile 启动命令含 `npx prisma migrate deploy`）。若迁移出错导致容器起不来，用 `docker compose logs --tail=100 web` 定位处理。
+
+#### 方式 B：pm2 / nohup 本地进程
+
+```bash
+cd /root/class-pet-ai
+git pull
+npm install
+npx prisma migrate deploy         # 应用数据库迁移（无新增迁移时为空操作，可放心重复执行）
+npm run build                     # 构建生产包（内部含 prisma generate + next build）
+pm2 reload class-pet-ai           # 零停机重载，替代普通 restart
+pm2 status                        # 确认状态为 online
+pm2 logs class-pet-ai --lines 100 # 查看日志
+```
+
+- 首次部署先注册：`pm2 start "npm run start" --name class-pet-ai && pm2 save`，之后每次更新只需 `pm2 reload class-pet-ai`。
+- 若用 nohup 而非 pm2：
+
+```bash
+cd /root/class-pet-ai
+git pull
+npm install
+npx prisma migrate deploy
+npm run build
+kill $(lsof -tiTCP:3000 -sTCP:LISTEN)    # 停止旧进程（端口以实际为准）
+nohup npm run start > /tmp/class-pet-ai.log 2>&1 &
+tail -f /tmp/class-pet-ai.log
+```
+
+#### 更新后检查
+
+- 确认运行版本与期望一致：`git log --oneline -1`。
+- 打开页面验证核心功能；涉及数据库变更时重点检查相关页面与数据。
+- 服务异常时先看日志（Docker：`docker compose logs --tail=100 web`；pm2：`pm2 logs class-pet-ai --lines 100`）。
 
 ### 正式上线前检查
 
