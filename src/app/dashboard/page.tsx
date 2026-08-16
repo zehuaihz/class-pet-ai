@@ -39,7 +39,7 @@ export default function DashboardPage() {
       const dashboardPayload = await dashboardResponse.json()
       setDashboard(dashboardPayload.data)
     } catch {
-      setError("加载 Dashboard 失败")
+      setError("加载教师面板失败")
     } finally {
       setLoading(false)
     }
@@ -57,7 +57,7 @@ export default function DashboardPage() {
         setSelectedClassroomId(classroomId)
         await loadDashboard(classroomId)
       } catch {
-        setError("加载 Dashboard 失败")
+        setError("加载教师面板失败")
         setLoading(false)
       }
     }
@@ -85,7 +85,7 @@ export default function DashboardPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">教师 Dashboard</h1>
+          <h1 className="text-2xl font-bold">教师面板</h1>
           <p className="mt-1 text-slate-600">今日班级状态、快捷加分、打卡和宠物成长入口。</p>
         </div>
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}

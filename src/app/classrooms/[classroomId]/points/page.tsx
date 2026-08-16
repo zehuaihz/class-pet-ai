@@ -97,7 +97,7 @@ export default function PointsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">积分管理</h1>
             <p className="text-slate-600">单人 / 批量 / 全班加减分，流水追踪与撤销。</p>

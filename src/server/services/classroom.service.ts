@@ -1,11 +1,19 @@
+import { UserRole } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { AppError } from "@/server/utils/errors"
 
 export async function assertTeacherOwnsClassroom(teacherProfileId: string, classroomId: string) {
+  const profile = await prisma.teacherProfile.findUnique({
+    where: { id: teacherProfileId },
+    include: { user: { select: { role: true } } },
+  })
+  if (!profile) throw new AppError("FORBIDDEN", "No permission for classroom")
+
   const classroom = await prisma.classroom.findFirst({
     where: {
       id: classroomId,
-      teacherId: teacherProfileId,
+      // 系统管理员可访问任意班级；班级管理员只能访问自己拥有的班级。
+      ...(profile.user.role === UserRole.ADMIN ? {} : { teacherId: teacherProfileId }),
     },
   })
 

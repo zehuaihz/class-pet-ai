@@ -187,7 +187,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 | 页面 | 当前能力 |
 | --- | --- |
 | `/auth/login` | 教师登录 |
-| `/dashboard` | 打卡率、今日加分、在养宠物、毕业徽章摘要 |
+| `/dashboard` | 教师面板：打卡率、今日加分、在养宠物、毕业徽章摘要 |
 | `/classrooms` | 班级列表（学生数、毕业宠物数） |
 | `/classrooms/new` | 创建班级 |
 | `/classrooms/[id]/students` | 学生 CRUD、Excel 模板导入、添加时可选宠物品种、搜索、一键分配宠物、宠物进度卡 |

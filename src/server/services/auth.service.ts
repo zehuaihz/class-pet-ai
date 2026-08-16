@@ -51,7 +51,7 @@ export async function authenticateTeacher(input: unknown) {
     })
   }
 
-  if (user.role !== UserRole.TEACHER) throw new AppError("FORBIDDEN", "Teacher account required")
+  if (user.role !== UserRole.TEACHER && user.role !== UserRole.ADMIN) throw new AppError("FORBIDDEN", "Teacher account required")
 
   if (!user.teacherProfile) {
     const teacherProfile = await prisma.teacherProfile.create({ data: { userId: user.id, schoolName: "测试小学" } })
@@ -59,6 +59,35 @@ export async function authenticateTeacher(input: unknown) {
   }
 
   return user
+}
+
+const accountLoginSchema = z.object({
+  identifier: z.string().trim().min(1),
+  password: z.string().trim().min(1),
+})
+
+/**
+ * 按账号（邮箱或手机号）登录：查库校验凭据，任意角色均可。
+ * DB 中存在该账号时以库内密码为准（env 兜底永不介入）；仅当账号不在库时
+ * 回落 authenticateTeacher（env 教师凭据，首次登录自动建号），保证无缝迁移。
+ */
+export async function authenticateAccount(input: unknown) {
+  const { identifier, password } = accountLoginSchema.parse(input)
+
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ email: identifier }, { phone: identifier }], status: "ACTIVE" },
+    include: { credentials: true, teacherProfile: true, studentAccount: true, children: { select: { studentId: true } } },
+  })
+
+  if (user) {
+    if (user.credentials.length === 0) throw new AppError("UNAUTHORIZED", "该账号未设置密码")
+    const matched = user.credentials.find((credential) => verifyPassword(password, credential))
+    if (!matched) throw new AppError("UNAUTHORIZED", "账号或密码错误")
+    if (matched.requireReset) throw new AppError("FORBIDDEN", "密码需要重置，请联系管理员")
+    return user
+  }
+
+  return authenticateTeacher({ identifier, password })
 }
 
 const credentialLoginSchema = z.object({

@@ -194,7 +194,19 @@ test.describe("class pet AI teacher flows", () => {
         return
       }
 
-      await route.fulfill({ json: { success: true, data: { outputJson: { text: "小明本周课堂表现积极，阅读打卡稳定。" } }, error: null, meta: null } })
+      await route.fulfill({ json: { success: true, data: { jobId: "job_1", status: "PENDING" }, error: null, meta: null } })
+    })
+
+    // comment-draft 返回 jobId 后，页面会轮询任务接口拿草稿结果。
+    await page.route("**/api/v1/ai/jobs/job_1", async (route) => {
+      await route.fulfill({
+        json: {
+          success: true,
+          data: { id: "job_1", type: "COMMENT_DRAFT", status: "SUCCEEDED", outputJson: { text: "小明本周课堂表现积极，阅读打卡稳定。" }, errorMessage: null },
+          error: null,
+          meta: null,
+        },
+      })
     })
   })
 

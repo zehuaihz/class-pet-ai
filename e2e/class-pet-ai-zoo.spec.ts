@@ -108,6 +108,7 @@ test.describe("class zoo core loop", () => {
     await page.getByText("小明").first().click()
     await expect(page.getByText("小明 的宠物")).toBeVisible()
     await page.getByRole("button", { name: "课堂表现 +1" }).click()
-    await expect(page.getByText("累计食物 1", { exact: true })).toBeVisible()
+    // 卡片与详情弹窗都会显示成长值，用 first() 消除 strict 模式歧义。
+    await expect(page.getByText("累计食物 1", { exact: true }).first()).toBeVisible()
   })
 })

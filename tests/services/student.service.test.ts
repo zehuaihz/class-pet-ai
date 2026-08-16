@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const dbMocks = vi.hoisted(() => ({
   classroomFindFirst: vi.fn(),
+  teacherProfileFindUnique: vi.fn(),
   groupFindFirst: vi.fn(),
   transaction: vi.fn(),
   petSpeciesFindUnique: vi.fn(),
@@ -12,6 +13,7 @@ const dbMocks = vi.hoisted(() => ({
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
     classroom: { findFirst: dbMocks.classroomFindFirst },
+    teacherProfile: { findUnique: dbMocks.teacherProfileFindUnique },
     group: { findFirst: dbMocks.groupFindFirst },
     $transaction: dbMocks.transaction,
   },
@@ -31,6 +33,7 @@ const student = { id: "student_1", classroomId: "classroom_1", name: "小明" }
 describe("createStudent", () => {
   beforeEach(() => {
     dbMocks.classroomFindFirst.mockResolvedValue({ id: "classroom_1", teacherId: "teacher_1" })
+    dbMocks.teacherProfileFindUnique.mockResolvedValue({ id: "teacher_1", user: { role: "TEACHER" } })
     dbMocks.groupFindFirst.mockResolvedValue(null)
     dbMocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx))
     dbMocks.petSpeciesFindUnique.mockResolvedValue(species)

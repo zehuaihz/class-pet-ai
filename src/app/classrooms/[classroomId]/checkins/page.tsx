@@ -62,7 +62,7 @@ export default function CheckinsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">打卡任务</h1>
             <p className="text-slate-600">创建任务、查看完成率、补录和审批。</p>

@@ -59,7 +59,7 @@ export default function RewardsPage() {
           <h2 className="font-semibold">兑换申请</h2>
           <div className="mt-4 space-y-3">
             {redemptions.map((redemption) => (
-              <div key={redemption.id} className="flex items-center justify-between rounded-lg border p-3">
+              <div key={redemption.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                 <div><div className="font-medium">{redemption.student.name} · {redemption.rewardItem.name}</div><div className="text-sm text-slate-500">{redemption.status}</div></div>
                 <div className="flex gap-2">
                   {redemption.status === "PENDING" ? <button className="rounded-lg bg-green-600 px-3 py-1 text-white" onClick={() => act(redemption.id, "approve")}>批准</button> : null}

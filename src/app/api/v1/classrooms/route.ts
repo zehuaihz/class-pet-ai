@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { PetStatus } from "@prisma/client"
+import { PetStatus, UserRole } from "@prisma/client"
 import { requireTeacher } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 import { createInviteCode } from "@/server/services/classroom.service"
@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const teacher = await requireTeacher()
     const classrooms = await prisma.classroom.findMany({
-      where: { teacherId: teacher.teacherProfileId },
+      where: teacher.role === UserRole.ADMIN ? {} : { teacherId: teacher.teacherProfileId },
       include: { _count: { select: { students: true } } },
       orderBy: { createdAt: "desc" },
     })

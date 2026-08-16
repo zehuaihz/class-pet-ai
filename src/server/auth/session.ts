@@ -102,10 +102,21 @@ export async function requireUser(): Promise<CurrentUser> {
 
 export async function requireTeacher() {
   const user = await requireUser()
-  if (user.role !== UserRole.TEACHER || !user.teacherProfileId) {
+  if (user.role !== UserRole.TEACHER && user.role !== UserRole.ADMIN) {
     throw new AppError("FORBIDDEN", "Teacher role required")
   }
-  return user as CurrentUser & { teacherProfileId: string }
+  let teacherProfileId = user.teacherProfileId
+  if (!teacherProfileId) {
+    // 系统管理员没有所属班级，但仍需要 TeacherProfile 作为课堂操作的留痕 FK
+    // （加分、审批等记录的 teacherId/操作人）。upsert 防并发竞态。
+    const profile = await prisma.teacherProfile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
+    })
+    teacherProfileId = profile.id
+  }
+  return { ...user, teacherProfileId } as CurrentUser & { teacherProfileId: string }
 }
 
 export async function requireStudent() {

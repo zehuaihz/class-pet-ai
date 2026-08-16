@@ -2,9 +2,17 @@
 // 因此可在本地（node prisma/seed.mjs）与 Docker 容器（runner 含 node + @prisma/client）中直接运行，
 // 无需 tsx 或项目源码（src/）。
 
+import { randomBytes, scryptSync } from "node:crypto"
 import { PetStatus, PrismaClient, UserRole } from "@prisma/client"
 
 const prisma = new PrismaClient()
+
+// 与 src/server/auth/password.ts 保持一致
+function hashPassword(password) {
+  const passwordSalt = randomBytes(16).toString("hex")
+  const passwordHash = scryptSync(password, passwordSalt, 64).toString("hex")
+  return { passwordHash, passwordSalt }
+}
 
 // 与 src/server/domain/student-pet-rules.ts 保持一致
 const MAX_PET_LEVEL = 4
@@ -37,13 +45,22 @@ function buildVisualSlots(key) {
 async function main() {
   const user = await prisma.user.upsert({
     where: { email: "teacher@example.com" },
-    update: {},
+    // 首个系统管理员：重复 seed 也保持 ADMIN。
+    update: { role: UserRole.ADMIN },
     create: {
       email: "teacher@example.com",
       name: "张老师",
-      role: UserRole.TEACHER,
+      role: UserRole.ADMIN,
     },
   })
+
+  // 确保首个系统管理员有登录凭据（密码取环境变量或默认 password123）。
+  const existingCredentials = await prisma.passwordCredential.findFirst({ where: { userId: user.id } })
+  if (!existingCredentials) {
+    const password = process.env.TEACHER_LOGIN_PASSWORD || "password123"
+    const { passwordHash, passwordSalt } = hashPassword(password)
+    await prisma.passwordCredential.create({ data: { userId: user.id, passwordHash, passwordSalt, requireReset: false } })
+  }
 
   const teacher = await prisma.teacherProfile.upsert({
     where: { userId: user.id },
