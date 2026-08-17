@@ -41,11 +41,14 @@ export default function ClassroomsPage() {
         {!loading && !error && classrooms.length === 0 ? <div className="rounded-xl bg-white p-6 text-slate-600 shadow-sm">暂无班级。先创建一个试点班级。</div> : null}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {classrooms.map((classroom) => (
-            <Link key={classroom.id} href={`/classrooms/${classroom.id}/students`} className="rounded-xl bg-white p-5 shadow-sm transition hover:ring-2 hover:ring-green-200">
-              <div className="text-lg font-semibold">{classroom.name}</div>
-              <div className="mt-2 text-sm text-slate-500">{classroom.grade ?? "未设置年级"} · {classroom.schoolName ?? "未设置学校"}</div>
-              <div className="mt-4 flex justify-between text-sm"><span>{classroom.studentCount} 名学生</span><span>宠物 Lv.{classroom.petLevel}</span></div>
-            </Link>
+            <div key={classroom.id} className="rounded-xl bg-white p-5 shadow-sm transition hover:ring-2 hover:ring-green-200">
+              <Link href={`/classrooms/${classroom.id}/students`}>
+                <div className="text-lg font-semibold">{classroom.name}</div>
+                <div className="mt-2 text-sm text-slate-500">{classroom.grade ?? "未设置年级"} · {classroom.schoolName ?? "未设置学校"}</div>
+                <div className="mt-4 flex justify-between text-sm"><span>{classroom.studentCount} 名学生</span><span>宠物 Lv.{classroom.petLevel}</span></div>
+              </Link>
+              <Link href={`/classrooms/${classroom.id}/screen`} className="mt-3 inline-block rounded-lg border px-3 py-1 text-sm text-green-700">📺 投屏</Link>
+            </div>
           ))}
         </div>
       </div>

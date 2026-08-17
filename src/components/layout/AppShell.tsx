@@ -11,16 +11,14 @@ const baseNav = [
   { href: "/classrooms", label: "班级" },
 ]
 
+// 班级子模块：合并徽章墙+光荣榜为荣誉墙；数据台账与班级大屏从侧栏移入设置/列表入口。
 const classroomNav = [
   { key: "zoo", label: "动物园", href: (id: string) => `/classrooms/${id}/zoo` },
   { key: "students", label: "学生管理", href: (id: string) => `/classrooms/${id}/students` },
   { key: "points", label: "积分管理", href: (id: string) => `/classrooms/${id}/points` },
-  { key: "badges", label: "徽章墙", href: (id: string) => `/classrooms/${id}/badges` },
-  { key: "leaderboard", label: "光荣榜", href: (id: string) => `/classrooms/${id}/leaderboard` },
+  { key: "honor", label: "荣誉墙", href: (id: string) => `/classrooms/${id}/badges` },
   { key: "rewards", label: "小卖部", href: (id: string) => `/classrooms/${id}/rewards` },
-  { key: "audit", label: "数据台账", href: (id: string) => `/classrooms/${id}/audit` },
   { key: "settings", label: "设置", href: (id: string) => `/classrooms/${id}/settings` },
-  { key: "screen", label: "班级大屏", href: (id: string) => `/classrooms/${id}/screen` },
 ]
 
 type NavItem = { href: string; label: string }

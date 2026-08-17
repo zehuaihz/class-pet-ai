@@ -31,13 +31,12 @@
 | 自定义成长阈值 | 已实现 | 每班级配置 1~4 级累计食物阈值，默认 `[0,10,30,60]` |
 | 满级毕业 | 已实现 | 到达满级自动标记毕业并发放 1 枚徽章（同事务） |
 | 领养下一代 | 已实现 | 毕业宠物记录保留，可领养下一只新宠物继续循环 |
-| 徽章墙 | 已实现 | 按学生展示累计/可用/已消耗徽章，含兑换历史 |
-| 光荣榜 | 已实现 | 按可用徽章数排序，展示姓名、品种、等级、进度、徽章数 |
+| 荣誉墙 | 已实现 | 徽章墙 + 光荣榜合并：页内 Tab 切换（徽章图鉴 / 徽章排行） |
 | 小卖部 | 已实现 | 奖励商品 CRUD、徽章兑换、审批、履约、取消退回徽章 |
 | 批量/全班加减分 | 已实现 | 勾选多人或全班统一加减分，`batchKey` 幂等保护 |
-| 数据台账 | 已实现 | 全操作日志、撤销留痕、CSV 导出、按日期清理 |
+| 设置 | 已实现 | 班级信息、成长阈值、系统名称、数据台账（日志/导出/清理）、班级大屏入口 |
 | 系统名称配置 | 已实现 | 全局系统名可改（默认「班级动物园」），首页/大屏/导航同步 |
-| 班级大屏 | 已实现 | 动物园墙视图，约 3 秒轮询，支持全屏；不是 WebSocket/SSE |
+| 班级大屏 | 已实现 | 动物园墙视图，约 3 秒轮询，支持全屏；入口在设置页与班级列表「投屏」按钮，不在侧栏 |
 | 打卡任务 | 保留 | 未在本轮改造范围，API 与页面维持原状 |
 | AI 评语草稿 | 保留 | 未在本轮改造范围，Provider/worker 维持原状 |
 | 多角色账号 | 部分 | 学生端首页/小卖部已接入宠物与徽章；家长/Admin 仍为占位 |
@@ -95,11 +94,11 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 1. 登录教师账号 → **动物园**：每位学生一只专属宠物卡片，未分配的学生可「一键分配宠物」。
 2. 点击某位学生的卡片 → 喂食（快捷 +1/+2 预设）→ 观察进度条推进与升级动画。
 3. 持续喂食到满级 → 自动获得徽章 → 「领养下一只新宠物」。
-4. **光荣榜** 查看徽章排行；**徽章墙** 查看全班徽章图鉴。
+4. **荣誉墙** 页内切换「徽章」/「排行」，查看全班徽章图鉴与徽章排行。
 5. **小卖部** 用徽章兑换奖励；教师端审批/履约/取消兑换。
 6. **积分管理** 支持单人/批量/全班加减分与撤销。
-7. **设置** 自定义成长阈值与全局系统名称；**数据台账** 导出 CSV 或按日期清理。
-8. **班级大屏** 全屏展示班级动物园墙（约 3 秒轮询）。
+7. **设置** 编辑班级信息、成长阈值、全局系统名称，并可从设置进入**数据台账**（导出 CSV / 按日期清理）与**班级大屏**。
+8. **班级列表** 每个班级卡片有「投屏」按钮，直接全屏展示动物园墙（约 3 秒轮询）。
 
 ## 更换宠物图片与成长图片
 
@@ -152,7 +151,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 - **换格式**：默认是 `.png`，想用 jpg/webp 就改 `PetVisual.tsx` 里的路径后缀，并把同名图片放进去。
 - **换等级数量**：目前固定 4 级；调整 `MAX_PET_LEVEL` 前需同步 seed 与阈值配置。
 - **换品种**：在 `prisma/seed.mjs` 的 `SPECIES_SEED` 里增删品种，并准备对应 `public/pets/<key>-lv1..10.png`；已分配该品种的学生会在重新 seed 后生效（或在数据库直接改 `PetSpecies` 表）。
-- **徽章图**：徽章展示在「徽章墙」，目前用固定 🏅 emoji；若要换成满级形象，可将 `Badge.visualKey`（即 `<speciesKey>-lv4`）映射到 `public/pets/` 对应图片。
+- **徽章图**：徽章展示在「荣誉墙 · 徽章」，目前用固定 🏅 emoji；若要换成满级形象，可将 `Badge.visualKey`（即 `<speciesKey>-lv4`）映射到 `public/pets/` 对应图片。
 
 ## 业务闭环
 
@@ -193,12 +192,11 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 | `/classrooms/[id]/students` | 学生 CRUD、Excel 模板导入、添加时可选宠物品种、搜索、一键分配宠物、宠物进度卡 |
 | `/classrooms/[id]/zoo` | 动物园墙：学生×宠物卡片、喂食/扣分、升级动画、毕业领徽章、领养下一只 |
 | `/classrooms/[id]/points` | 单人 / 批量 / 全班加减分、流水、撤销、小组榜 |
-| `/classrooms/[id]/badges` | 徽章墙（累计/可用/已消耗） |
-| `/classrooms/[id]/leaderboard` | 光荣榜（徽章数排序） |
+| `/classrooms/[id]/badges` · `/leaderboard` | 荣誉墙：页内 Tab 切换（徽章图鉴 / 徽章排行） |
 | `/classrooms/[id]/rewards` | 小卖部：奖励商品、兑换审批/履约/取消 |
-| `/classrooms/[id]/audit` | 数据台账：操作日志、CSV 导出、按日期清理 |
-| `/classrooms/[id]/settings` | 成长阈值配置、全局系统名称 |
-| `/classrooms/[id]/screen` | 班级动物园大屏（约 3 秒轮询 + 全屏） |
+| `/classrooms/[id]/audit` | 数据台账：操作日志、CSV 导出、按日期清理（从设置页进入） |
+| `/classrooms/[id]/settings` | 设置：班级信息、成长阈值、系统名称、数据台账与班级大屏入口、用户管理入口（管理员） |
+| `/classrooms/[id]/screen` | 班级动物园大屏（约 3 秒轮询 + 全屏；入口在班级列表「投屏」按钮与设置页） |
 | `/classrooms/[id]/checkins*` | 打卡任务与审批（保留，未改造） |
 | `/classrooms/[id]/ai*` | AI 评语工作台（保留，未改造） |
 
@@ -208,8 +206,7 @@ tail -f /tmp/class-pet-ai.log    # 查看日志
 - Classroom / Student：班级与学生 CRUD、导入、搜索。
 - Zoo：`GET /zoo`、`POST /pets/assign`、`GET /students/[id]/pet`、`POST /students/[id]/pet/adopt`、`GET /pet-species`。
 - Feeding：`POST /points/feed`（单人/批量/全班，batchKey 幂等）、`POST /points/transactions`、撤销。
-- Badges：`GET /badges`、`GET /students/[id]/badges`。
-- Leaderboard：`GET /leaderboard`。
+- Honor（荣誉墙）：`GET /badges`、`GET /students/[id]/badges`、`GET /leaderboard`。
 - Rewards：奖励商品 CRUD、徽章兑换、审批/履约/取消。
 - Config：`GET/PUT /pet-level-config`、`GET/PUT /system-settings`。
 - Audit：`GET /audit/export`（CSV）、`DELETE /audit`（清理）。

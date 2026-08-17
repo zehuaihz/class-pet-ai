@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
+import { HonorTabs } from "@/components/classrooms/HonorTabs"
 import { PetVisual } from "@/components/pets/PetVisual"
 import { apiRequest } from "@/lib/api-client"
 
@@ -40,9 +41,12 @@ export default function LeaderboardPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">光荣榜</h1>
-          <p className="text-slate-600">按持有徽章数量排序，徽章来自宠物满级毕业。</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">荣誉墙</h1>
+            <p className="text-slate-600">按持有徽章数量排序，徽章来自宠物满级毕业。</p>
+          </div>
+          <HonorTabs />
         </div>
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         {loading ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">加载中...</div> : null}

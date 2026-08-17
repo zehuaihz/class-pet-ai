@@ -118,6 +118,27 @@ export default function SettingsPage() {
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         {saved ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">设置已保存</div> : null}
 
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link href={`/classrooms/${classroomId}/audit`} className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold">🗂️ 数据台账</div>
+                <div className="mt-1 text-sm text-slate-500">操作日志留痕、导出 CSV、按日期清理。</div>
+              </div>
+              <span className="text-slate-400">→</span>
+            </div>
+          </Link>
+          <Link href={`/classrooms/${classroomId}/screen`} className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold">📺 班级大屏</div>
+                <div className="mt-1 text-sm text-slate-500">投屏展示班级动物园墙，可全屏。</div>
+              </div>
+              <span className="text-slate-400">→</span>
+            </div>
+          </Link>
+        </div>
+
         {isAdmin ? (
           <Link href="/admin" className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
             <div className="flex items-center justify-between">
