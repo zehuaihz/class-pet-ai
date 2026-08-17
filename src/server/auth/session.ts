@@ -152,9 +152,10 @@ export function createSessionToken(userId: string, sessionVersion: number) {
   return `${payload}.${sign(payload)}`
 }
 
-export function setSessionCookie(token: string) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${SESSION_TTL_SECONDS}`
+export function setSessionCookie(token: string, secure = false) {
+  // Secure 仅在真实 HTTPS 请求下启用；若服务器通过 HTTP 访问（docker compose 未配 TLS），
+  // 带 Secure 的 cookie 会被浏览器拒绝，导致登录后所有接口报 "Login required"。
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}; Max-Age=${SESSION_TTL_SECONDS}`
 }
 
 export function clearSessionCookie() {

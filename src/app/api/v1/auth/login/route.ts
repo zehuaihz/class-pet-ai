@@ -13,12 +13,16 @@ export async function POST(request: NextRequest) {
     if (user.status !== "ACTIVE") throw new AppError("UNAUTHORIZED", "账号已禁用")
     const token = createSessionToken(user.id, user.sessionVersion ?? 0)
 
+    // 只有真实 HTTPS 才给 cookie 加 Secure；HTTP 部署下 Secure cookie 会被浏览器拒绝。
+    const isHttps =
+      request.headers.get("x-forwarded-proto") === "https" || new URL(request.url).protocol === "https:"
+
     return NextResponse.json(
       ok({
         user: { id: user.id, role: user.role, name: user.name },
         session: { expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() },
       }),
-      { headers: { "Set-Cookie": setSessionCookie(token) } },
+      { headers: { "Set-Cookie": setSessionCookie(token, isHttps) } },
     )
   } catch (error) {
     return jsonError(error)
