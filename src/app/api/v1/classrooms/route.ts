@@ -11,14 +11,15 @@ export async function GET() {
     const teacher = await requireTeacher()
     const classrooms = await prisma.classroom.findMany({
       where: teacher.role === UserRole.ADMIN ? {} : { teacherId: teacher.teacherProfileId },
-      include: { _count: { select: { students: true } } },
+      // 只统计未删除（ACTIVE）的学生，软删除学生不计入。
+      include: { _count: { select: { students: { where: { status: "ACTIVE" } } } } },
       orderBy: { createdAt: "desc" },
     })
 
     const classroomIds = classrooms.map((classroom) => classroom.id)
     const graduatedRows = classroomIds.length > 0
       ? await prisma.studentPet.findMany({
-          where: { status: PetStatus.GRADUATED, student: { classroomId: { in: classroomIds } } },
+          where: { status: PetStatus.GRADUATED, student: { classroomId: { in: classroomIds }, status: "ACTIVE" } },
           select: { student: { select: { classroomId: true } } },
         })
       : []

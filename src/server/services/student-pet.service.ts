@@ -58,7 +58,7 @@ export async function assignRandomPet(actorTeacherId: string, classroomId: strin
   const species = await prisma.petSpecies.findMany({ where: { enabled: true }, orderBy: { sortOrder: "asc" } })
   if (species.length === 0) throw new AppError("CONFLICT", "No pet species available", 409)
 
-  const students = await prisma.student.findMany({ where: { id: { in: studentIds }, classroomId } })
+  const students = await prisma.student.findMany({ where: { id: { in: studentIds }, classroomId, status: "ACTIVE" } })
   if (students.length !== studentIds.length) {
     throw new AppError("FORBIDDEN", "Some students are not in this classroom", 403)
   }

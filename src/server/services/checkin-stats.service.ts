@@ -21,12 +21,14 @@ interface StatsClient {
 }
 
 async function computeCheckinStats(client: StatsClient, taskId: string, classroomId: string): Promise<CheckinStats> {
+  // 打卡记录只统计未删除学生（软删除学生不计入）。
+  const studentActiveFilter = { status: "ACTIVE" }
   const [completedCount, approvedCount, pendingCount, rejectedCount, missedCount, totalStudents] = await Promise.all([
-    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.COMPLETED } }),
-    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.APPROVED } }),
-    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.PENDING } }),
-    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.REJECTED } }),
-    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.MISSED } }),
+    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.COMPLETED, student: studentActiveFilter } }),
+    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.APPROVED, student: studentActiveFilter } }),
+    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.PENDING, student: studentActiveFilter } }),
+    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.REJECTED, student: studentActiveFilter } }),
+    client.checkinRecord.count({ where: { taskId, status: CheckinStatus.MISSED, student: studentActiveFilter } }),
     client.student.count({ where: { classroomId, status: "ACTIVE" } }),
   ])
   return {
