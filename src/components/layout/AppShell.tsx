@@ -11,17 +11,21 @@ const baseNav = [
   { href: "/classrooms", label: "班级" },
 ]
 
-// 班级子模块：合并徽章墙+光荣榜为荣誉墙；数据台账与班级大屏从侧栏移入设置/列表入口。
+// 班级子模块：合并徽章墙+光荣榜为荣誉墙；设置下挂管理类二级菜单。
 const classroomNav = [
   { key: "zoo", label: "动物园", href: (id: string) => `/classrooms/${id}/zoo` },
   { key: "students", label: "学生管理", href: (id: string) => `/classrooms/${id}/students` },
   { key: "points", label: "积分管理", href: (id: string) => `/classrooms/${id}/points` },
   { key: "honor", label: "荣誉墙", href: (id: string) => `/classrooms/${id}/badges` },
   { key: "rewards", label: "小卖部", href: (id: string) => `/classrooms/${id}/rewards` },
-  { key: "settings", label: "设置", href: (id: string) => `/classrooms/${id}/settings` },
 ]
 
-type NavItem = { href: string; label: string }
+const settingsSubNav = [
+  { key: "audit", label: "数据台账", href: (id: string) => `/classrooms/${id}/audit` },
+  { key: "screen", label: "班级大屏", href: (id: string) => `/classrooms/${id}/screen` },
+]
+
+type NavItem = { href: string; label: string; children?: NavItem[] }
 type UserRole = "teacher" | "student" | "parent" | "admin"
 
 // 精确匹配的顶级路由，避免子路由（如 /student/rewards）连带高亮父级。
@@ -32,17 +36,37 @@ function NavLinkList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
   return (
     <div className="space-y-1">
       {items.map((item) => {
-        const active = EXACT_ROUTES.has(item.href) ? pathname === item.href : pathname.startsWith(item.href)
+        const childActive = item.children?.some((child) => (EXACT_ROUTES.has(child.href) ? pathname === child.href : pathname.startsWith(child.href))) ?? false
+        const active = EXACT_ROUTES.has(item.href) ? pathname === item.href : pathname.startsWith(item.href) || childActive
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={`block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100 ${active ? "bg-green-50 font-medium text-green-700" : ""}`}
-          >
-            {item.label}
-          </Link>
+          <div key={item.href}>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={pathname === item.href ? "page" : undefined}
+              className={`block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100 ${active ? "bg-green-50 font-medium text-green-700" : ""}`}
+            >
+              {item.label}
+            </Link>
+            {item.children && active ? (
+              <nav aria-label={`${item.label}二级菜单`} className="mt-1 space-y-1 pl-4">
+                {item.children.map((child) => {
+                  const childActive = EXACT_ROUTES.has(child.href) ? pathname === child.href : pathname.startsWith(child.href)
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={onNavigate}
+                      aria-current={childActive ? "page" : undefined}
+                      className={`block rounded-lg px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100 ${childActive ? "bg-green-50 font-medium text-green-700" : ""}`}
+                    >
+                      {child.label}
+                    </Link>
+                  )
+                })}
+              </nav>
+            ) : null}
+          </div>
         )
       })}
     </div>
@@ -108,16 +132,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       ]
     }
     if (role === "parent") return [{ href: "/parent", label: "家长端" }]
-    if (role === "admin") {
-      return [
-        { href: "/admin", label: "用户管理" },
-        ...baseNav,
-        ...(currentClassroomId ? classroomNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label })) : []),
-      ]
-    }
-    return currentClassroomId
-      ? [...baseNav, ...classroomNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label }))]
-      : baseNav
+    if (!currentClassroomId) return role === "admin" ? [{ href: "/admin", label: "用户管理" }, ...baseNav] : baseNav
+
+    const settingsChildren = [
+      ...settingsSubNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label })),
+      ...(role === "admin" ? [{ href: "/admin", label: "用户管理" }] : []),
+    ]
+    const settingsItem = { href: `/classrooms/${currentClassroomId}/settings`, label: "设置", children: settingsChildren }
+
+    return [
+      ...baseNav,
+      ...classroomNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label })),
+      settingsItem,
+    ]
   }, [role, currentClassroomId])
 
   // 抽屉打开时：Escape 关闭、锁定背景滚动、焦点移入抽屉。

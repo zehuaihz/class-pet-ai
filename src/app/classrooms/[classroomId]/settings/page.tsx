@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
@@ -118,38 +117,41 @@ export default function SettingsPage() {
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         {saved ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">设置已保存</div> : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link href={`/classrooms/${classroomId}/audit`} className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold">🗂️ 数据台账</div>
-                <div className="mt-1 text-sm text-slate-500">操作日志留痕、导出 CSV、按日期清理。</div>
+        <section className="rounded-xl bg-white p-6 shadow-sm">
+          <h2 className="font-semibold">设置导航</h2>
+          <p className="mt-1 text-sm text-slate-500">这里放班级设置相关二级入口。</p>
+          <div className="mt-4 space-y-2">
+            <a href={`/classrooms/${classroomId}/audit`} className="block rounded-lg border px-4 py-3 transition hover:border-green-300 hover:bg-green-50/40">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-semibold">🗂️ 数据台账</div>
+                  <div className="mt-1 text-sm text-slate-500">操作日志留痕、导出 CSV、按日期清理。</div>
+                </div>
+                <span className="text-slate-400">→</span>
               </div>
-              <span className="text-slate-400">→</span>
-            </div>
-          </Link>
-          <Link href={`/classrooms/${classroomId}/screen`} className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold">📺 班级大屏</div>
-                <div className="mt-1 text-sm text-slate-500">投屏展示班级动物园墙，可全屏。</div>
+            </a>
+            <a href={`/classrooms/${classroomId}/screen`} className="block rounded-lg border px-4 py-3 transition hover:border-green-300 hover:bg-green-50/40">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-semibold">📺 班级大屏</div>
+                  <div className="mt-1 text-sm text-slate-500">投屏展示班级动物园墙，可全屏。</div>
+                </div>
+                <span className="text-slate-400">→</span>
               </div>
-              <span className="text-slate-400">→</span>
-            </div>
-          </Link>
-        </div>
-
-        {isAdmin ? (
-          <Link href="/admin" className="block rounded-xl bg-white p-5 shadow-sm transition hover:border-green-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold">👥 用户管理</div>
-                <div className="mt-1 text-sm text-slate-500">创建用户、设置系统管理员/班级管理员角色、启用与禁用账号。</div>
-              </div>
-              <span className="text-slate-400">→</span>
-            </div>
-          </Link>
-        ) : null}
+            </a>
+            {isAdmin ? (
+              <a href="/admin" className="block rounded-lg border px-4 py-3 transition hover:border-green-300 hover:bg-green-50/40">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">👥 用户管理</div>
+                    <div className="mt-1 text-sm text-slate-500">创建用户、设置系统管理员/班级管理员角色、启用与禁用账号。</div>
+                  </div>
+                  <span className="text-slate-400">→</span>
+                </div>
+              </a>
+            ) : null}
+          </div>
+        </section>
 
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
