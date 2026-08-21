@@ -2,7 +2,30 @@ import { PetStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
 
-export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string) {
+export interface DashboardRecentTransaction {
+  id: string
+  name: string
+  reason: string
+  delta: number
+}
+
+export interface ClassroomDashboard {
+  today: {
+    checkinRate: number
+    pointCount: number
+    missedCount: number
+  }
+  zoo: {
+    graduatedCount: number
+    growingCount: number
+    availableBadges: number
+  }
+  topStudents: Array<{ id: string; name: string; totalPoints: number }>
+  activeTasks: Array<{ id: string; title: string }>
+  recentTransactions: DashboardRecentTransaction[]
+}
+
+export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string): Promise<ClassroomDashboard> {
   const [zoo, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
     Promise.all([
       prisma.studentPet.count({ where: { status: PetStatus.GRADUATED, student: { classroomId, status: "ACTIVE" } } }),
@@ -15,6 +38,13 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
     prisma.student.count({ where: { classroomId, status: "ACTIVE" } }),
     prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfToday() } } }),
   ])
+
+  const recentActivity = recentTransactions.map((transaction) => ({
+    id: transaction.id,
+    name: transaction.student?.name ?? transaction.group?.name ?? "未知",
+    reason: transaction.reason,
+    delta: transaction.delta,
+  }))
 
   const stats = actorTeacherId
     ? await getClassroomCheckinStats(actorTeacherId, classroomId)
@@ -31,8 +61,8 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
     },
     zoo,
     topStudents: students,
-    recentTransactions,
     activeTasks,
+    recentTransactions: recentActivity,
   }
 }
 

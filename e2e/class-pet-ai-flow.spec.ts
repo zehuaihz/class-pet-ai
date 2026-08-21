@@ -144,7 +144,7 @@ test.describe("class pet AI teacher flows", () => {
             zoo: { graduatedCount: 1, growingCount: 3, availableBadges: 2 },
             topStudents: [{ id: "s_1", name: "小明", totalPoints: 128 }],
             activeTasks: [{ id: "t_1", title: "阅读 20 分钟" }],
-            recentTransactions: [{ id: "pt_1", reason: "课堂发言", delta: 2 }],
+            recentTransactions: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2 }],
           },
           error: null,
           meta: null,
@@ -214,6 +214,7 @@ test.describe("class pet AI teacher flows", () => {
     await page.goto("/dashboard")
     await expect(page.getByText("85%")).toBeVisible()
     await expect(page.getByText("42")).toBeVisible()
+    await expect(page.getByText("小明", { exact: true }).first()).toBeVisible()
     await expect(page.getByText("课堂发言 · +2")).toBeVisible()
   })
 

@@ -35,7 +35,7 @@ test.describe("dashboard class switching", () => {
             zoo: { graduatedCount: 1, growingCount: 12, availableBadges: 8 },
             topStudents: [{ id: "s_1", name: "小明", totalPoints: 128 }],
             activeTasks: [{ id: "t_1", title: "阅读 20 分钟" }],
-            recentTransactions: [{ id: "pt_1", reason: "课堂发言", delta: 2 }],
+            recentTransactions: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2 }],
           },
           error: null,
           meta: null,
@@ -52,7 +52,7 @@ test.describe("dashboard class switching", () => {
             zoo: { graduatedCount: 0, growingCount: 4, availableBadges: 1 },
             topStudents: [{ id: "s_3", name: "小华", totalPoints: 55 }],
             activeTasks: [],
-            recentTransactions: [{ id: "pt_9", reason: "作业优秀", delta: 3 }],
+            recentTransactions: [{ id: "pt_9", name: "小华", reason: "作业优秀", delta: 3 }],
           },
           error: null,
           meta: null,
@@ -77,6 +77,7 @@ test.describe("dashboard class switching", () => {
     await expect(page.getByText("50%", { exact: true })).toBeVisible()
     await expect(page.getByText("7", { exact: true })).toBeVisible()
     await expect(page.getByText("4", { exact: true })).toBeVisible()
+    await expect(page.getByText("小华", { exact: true })).toBeVisible()
     await expect(page.getByText("作业优秀 · +3")).toBeVisible()
     await expect(page).toHaveURL(/\/dashboard$/)
   })

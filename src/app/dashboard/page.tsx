@@ -14,7 +14,11 @@ type DashboardPayload = {
   zoo: { graduatedCount: number; growingCount: number; availableBadges: number }
   topStudents: Array<{ id: string; name: string; totalPoints: number }>
   activeTasks: Array<{ id: string; title: string }>
-  recentTransactions: Array<{ id: string; reason: string; delta: number }>
+  recentTransactions: Array<{ id: string; name: string; reason: string; delta: number }>
+}
+
+function formatDelta(delta: number): string {
+  return `${delta >= 0 ? "+" : ""}${delta}`
 }
 
 export default function DashboardPage() {
@@ -118,7 +122,9 @@ export default function DashboardPage() {
             <h2 className="font-semibold">最近动态</h2>
             <div className="mt-4 space-y-3">
               {(dashboard?.recentTransactions ?? []).map((action) => (
-                <div key={action.id} className="rounded-lg border px-3 py-2 text-slate-700">{action.reason} · +{action.delta}</div>
+                <div key={action.id} className="rounded-lg border px-3 py-2 text-slate-700">
+                  {action.name} · {action.reason} · {formatDelta(action.delta)}
+                </div>
               ))}
             </div>
           </div>

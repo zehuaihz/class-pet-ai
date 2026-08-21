@@ -48,4 +48,14 @@ describe("dashboard check-in statistics", () => {
       missedCount: 2,
     })
   })
+
+  it("includes student names in recent point activity", async () => {
+    dashboardMocks.pointTransactionFindMany
+      .mockResolvedValueOnce([{ id: "pt_1", student: { name: "小明" }, group: null, reason: "课堂发言", delta: 2 }])
+      .mockResolvedValueOnce([{ delta: 2 }])
+
+    const dashboard = await getClassroomDashboard("classroom_1")
+
+    expect(dashboard.recentTransactions).toEqual([{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2 }])
+  })
 })
