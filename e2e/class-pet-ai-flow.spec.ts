@@ -62,7 +62,7 @@ test.describe("class pet AI teacher flows", () => {
         await route.fulfill({
           json: {
             success: true,
-            data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, time: "09:12" }] },
+            data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, createdAt: "2026-08-21T01:12:00.000Z" }] },
             error: null,
             meta: null,
           },
@@ -224,7 +224,7 @@ test.describe("class pet AI teacher flows", () => {
     await page.getByRole("button", { name: "+1" }).first().click()
     await page.getByRole("button", { name: "作业优秀" }).click()
     await page.getByRole("button", { name: "确认加分" }).click()
-    await expect(page.getByText("课堂发言").first()).toBeVisible()
+    await expect(page.getByText("课堂发言 · 09:12").first()).toBeVisible()
   })
 
   test("checkin pages load and create task", async ({ page }) => {

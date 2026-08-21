@@ -58,4 +58,14 @@ describe("dashboard check-in statistics", () => {
 
     expect(dashboard.recentTransactions).toEqual([{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2 }])
   })
+
+  it("queries today's points from the app timezone day boundary", async () => {
+    await getClassroomDashboard("classroom_1")
+
+    expect(dashboardMocks.pointTransactionFindMany).toHaveBeenNthCalledWith(2, {
+      where: { classroomId: "classroom_1", createdAt: { gte: expect.any(Date) } },
+    })
+    const query = dashboardMocks.pointTransactionFindMany.mock.calls[1][0] as { where: { createdAt: { gte: Date } } }
+    expect(query.where.createdAt.gte.toISOString()).toMatch(/T16:00:00\.000Z$/)
+  })
 })

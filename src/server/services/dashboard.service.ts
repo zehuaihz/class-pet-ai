@@ -1,4 +1,5 @@
 import { PetStatus } from "@prisma/client"
+import { startOfAppDay } from "@/lib/time"
 import { prisma } from "@/server/db/prisma"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
 
@@ -36,7 +37,7 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
     prisma.pointTransaction.findMany({ where: { classroomId }, orderBy: { createdAt: "desc" }, take: 5, include: { student: true, group: true } }),
     prisma.checkinTask.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.student.count({ where: { classroomId, status: "ACTIVE" } }),
-    prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfToday() } } }),
+    prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfAppDay() } } }),
   ])
 
   const recentActivity = recentTransactions.map((transaction) => ({
@@ -64,12 +65,6 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
     activeTasks,
     recentTransactions: recentActivity,
   }
-}
-
-function startOfToday(): Date {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return today
 }
 
 async function getDashboardStatsWithoutAuthorization(classroomId: string, taskIds: string[]) {

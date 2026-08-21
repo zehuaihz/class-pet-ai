@@ -23,7 +23,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ cl
         name: transaction.student?.name ?? transaction.group?.name ?? "未知",
         reason: transaction.reason,
         delta: transaction.delta,
-        time: transaction.createdAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        createdAt: transaction.createdAt.toISOString(),
+        reversalOfId: transaction.reversalOfId,
       })),
     })
   } catch (error) {

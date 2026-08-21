@@ -4,13 +4,14 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
 import { apiRequest } from "@/lib/api-client"
+import { formatAppTime, parseAppDateInput } from "@/lib/time"
 
 interface Transaction {
   id: string
   name: string
   reason: string
   delta: number
-  time: string
+  createdAt: string
   reversalOfId?: string | null
 }
 
@@ -35,7 +36,7 @@ export default function AuditPage() {
       setError("请选择清理日期")
       return
     }
-    const before = new Date(`${cutoff}T00:00:00`)
+    const before = parseAppDateInput(cutoff)
     if (!window.confirm(`确定清理 ${cutoff} 之前的所有操作日志？当前余额与宠物进度不受影响，该操作不可恢复。`)) return
     setCleaning(true)
     setError(null)
@@ -97,7 +98,7 @@ export default function AuditPage() {
               <tbody>
                 {items.map((tx) => (
                   <tr key={tx.id} className="border-b last:border-0">
-                    <td className="py-2 pr-4 text-slate-500">{tx.time}</td>
+                    <td className="py-2 pr-4 text-slate-500">{formatAppTime(tx.createdAt)}</td>
                     <td className="py-2 pr-4 font-medium">{tx.name}</td>
                     <td className="py-2 pr-4">{tx.reason}</td>
                     <td className={`py-2 pr-4 font-semibold ${tx.delta >= 0 ? "text-green-600" : "text-red-600"}`}>

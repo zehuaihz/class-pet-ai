@@ -17,7 +17,7 @@ test("approval and reverse flows", async ({ page }) => {
     await route.fulfill({ json: { success: true, data: { transaction: { id: "pt_2" } }, error: null, meta: null } })
   })
   await page.route("**/api/v1/classrooms/class_1/points/transactions", async (route) => {
-    await route.fulfill({ json: { success: true, data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, time: "09:12" }] }, error: null, meta: null } })
+    await route.fulfill({ json: { success: true, data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, createdAt: "2026-08-21T01:12:00.000Z" }] }, error: null, meta: null } })
   })
   await page.route("**/api/v1/classrooms/class_1/students", async (route) => {
     await route.fulfill({ json: { success: true, data: { items: [{ id: "s_1", name: "小明", totalPoints: 128 }] }, error: null, meta: null } })
@@ -30,4 +30,5 @@ test("approval and reverse flows", async ({ page }) => {
   await page.goto("/classrooms/class_1/points")
   await page.getByRole("button", { name: "撤销" }).first().click()
   await expect(page.getByText("小明", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("课堂发言 · 09:12")).toBeVisible()
 })

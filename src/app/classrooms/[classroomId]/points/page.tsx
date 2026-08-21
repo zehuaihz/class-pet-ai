@@ -5,10 +5,11 @@ import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
 import { QuickAddModal } from "@/components/points/QuickAddModal"
 import { BatchFeedModal } from "@/components/pets/BatchFeedModal"
+import { formatAppTime } from "@/lib/time"
 
 type Student = { id: string; name: string; totalPoints: number }
 type Rule = { id: string; name: string; pointDelta: number }
-type Transaction = { id: string; name: string; reason: string; delta: number; time: string; reversalOfId?: string | null }
+type Transaction = { id: string; name: string; reason: string; delta: number; createdAt: string; reversalOfId?: string | null }
 
 export default function PointsPage() {
   const params = useParams<{ classroomId: string }>()
@@ -128,7 +129,7 @@ export default function PointsPage() {
                 <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
                     <div className="font-medium">{tx.name}</div>
-                    <div className="text-sm text-slate-500">{tx.reason} · {tx.time}</div>
+                    <div className="text-sm text-slate-500">{tx.reason} · {formatAppTime(tx.createdAt)}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`font-semibold ${tx.delta >= 0 ? "text-green-600" : "text-red-600"}`}>{tx.delta >= 0 ? "+" : ""}{tx.delta}</span>
