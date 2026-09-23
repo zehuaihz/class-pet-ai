@@ -16,11 +16,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ta
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ taskId: string }> }) {
-  const teacher = await requireTeacher()
-  const { taskId } = await context.params
-  const body = await request.json()
-  if (body.action === "approve") {
-    return jsonOk(await approveCheckinRecord(teacher.teacherProfileId, body.recordId ?? taskId))
+  try {
+    const teacher = await requireTeacher()
+    const { taskId } = await context.params
+    const body = await request.json()
+    if (body.action === "approve") {
+      return jsonOk(await approveCheckinRecord(teacher.teacherProfileId, body.recordId ?? taskId))
+    }
+    return jsonOk(await rejectCheckinRecord(teacher.teacherProfileId, body.recordId ?? taskId))
+  } catch (error) {
+    return jsonError(error)
   }
-  return jsonOk(await rejectCheckinRecord(teacher.teacherProfileId, body.recordId ?? taskId))
 }

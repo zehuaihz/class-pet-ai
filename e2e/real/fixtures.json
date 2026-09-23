@@ -1,0 +1,30 @@
+{
+  "classroomId": "cmue5ts2h0002oarar5f381m3",
+  "studentId": "cmue5ts2r0006oaraxe7qqe4x",
+  "taskId": "cmue5ts9g000koarahlrq4g62",
+  "rewardId": "cmue5ts9l000moaramrl4dl3z",
+  "teacher": {
+    "identifier": "teacher@example.com",
+    "password": "password123"
+  },
+  "studentAccount": {
+    "identifier": "student.e2e@example.com",
+    "password": "student-pass-123",
+    "role": "STUDENT"
+  },
+  "parentAccount": {
+    "identifier": "parent.e2e@example.com",
+    "password": "parent-pass-123",
+    "role": "PARENT"
+  },
+  "adminAccount": {
+    "identifier": "admin.e2e@example.com",
+    "password": "admin-pass-123",
+    "role": "ADMIN"
+  },
+  "suspendedAccount": {
+    "identifier": "suspended.e2e@example.com",
+    "password": "suspended-pass-123",
+    "role": "PARENT"
+  }
+}

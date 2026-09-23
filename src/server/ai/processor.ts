@@ -5,8 +5,8 @@ import { claimAiJob, completeAiJob, failAiJob } from "@/server/services/ai-job.s
 import { buildCommentContext } from "@/server/services/ai-comment.service"
 
 export async function processAiJob(jobId: string, type: AiJobType, inputJson: unknown): Promise<void> {
-  const { claimed } = await claimAiJob(jobId)
-  if (!claimed) return
+  const claim = await claimAiJob(jobId)
+  if (!claim.claimed || !claim.claimToken) return
 
   try {
     if (type !== AiJobType.COMMENT_DRAFT) {
@@ -15,7 +15,7 @@ export async function processAiJob(jobId: string, type: AiJobType, inputJson: un
     const input = inputJson as { actorTeacherId: string; classroomId: string; studentId: string; tone: string; notes: string }
     const context = await buildCommentContext(input.actorTeacherId, input.classroomId, input.studentId, input.tone, input.notes)
     const result = await getAiProvider().generateCommentDraft(context)
-    await completeAiJob(jobId, { text: result.text }, {
+    await completeAiJob(jobId, claim.claimToken, { text: result.text }, {
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
@@ -23,9 +23,9 @@ export async function processAiJob(jobId: string, type: AiJobType, inputJson: un
     })
   } catch (error: unknown) {
     if (error instanceof ProviderError) {
-      await failAiJob(jobId, error.code, error.message, error.retryable)
+      await failAiJob(jobId, claim.claimToken, error.code, error.message, error.retryable)
     } else {
-      await failAiJob(jobId, "UNKNOWN", error instanceof Error ? error.message : "unknown error", true)
+      await failAiJob(jobId, claim.claimToken, "UNKNOWN", error instanceof Error ? error.message : "unknown error", true)
     }
   }
 }

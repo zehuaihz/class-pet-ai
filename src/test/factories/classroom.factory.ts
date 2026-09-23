@@ -28,6 +28,14 @@ export async function createTeacherWithClassroomAndStudent(
     },
   })
 
+  const pet = await prisma.pet.create({
+    data: {
+      classroomId: classroom.id,
+      name: "云朵龙",
+      species: "dragon",
+    },
+  })
+
   const group = input.withGroup
     ? await prisma.group.create({
         data: {
@@ -46,5 +54,5 @@ export async function createTeacherWithClassroomAndStudent(
     },
   })
 
-  return { teacherUser, teacher: teacherProfile, classroom, group, student }
+  return { teacherUser, teacher: teacherProfile, classroom, pet, group, student }
 }

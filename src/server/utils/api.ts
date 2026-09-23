@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { AppError } from "./errors"
 import { fail, ok } from "./response-envelope"
 
@@ -13,7 +14,16 @@ export function jsonError(error: unknown) {
     })
   }
 
-  console.error(error)
+  // Log only the error shape: Prisma messages embed field values (which can be
+  // an email or phone number) in their metadata.
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    console.error(`[api] prisma ${error.code} ${error.name}`)
+  } else if (error instanceof Error) {
+    console.error(`[api] ${error.name}: ${error.message}`)
+  } else {
+    console.error("[api] unknown error")
+  }
+
   return NextResponse.json(fail("INTERNAL_ERROR", "Internal server error"), {
     status: 500,
   })

@@ -102,21 +102,10 @@ export async function requireUser(): Promise<CurrentUser> {
 
 export async function requireTeacher() {
   const user = await requireUser()
-  if (user.role !== UserRole.TEACHER && user.role !== UserRole.ADMIN) {
+  if (user.role !== UserRole.TEACHER || !user.teacherProfileId) {
     throw new AppError("FORBIDDEN", "Teacher role required")
   }
-  let teacherProfileId = user.teacherProfileId
-  if (!teacherProfileId) {
-    // 系统管理员没有所属班级，但仍需要 TeacherProfile 作为课堂操作的留痕 FK
-    // （加分、审批等记录的 teacherId/操作人）。upsert 防并发竞态。
-    const profile = await prisma.teacherProfile.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: { userId: user.id },
-    })
-    teacherProfileId = profile.id
-  }
-  return { ...user, teacherProfileId } as CurrentUser & { teacherProfileId: string }
+  return user as CurrentUser & { teacherProfileId: string }
 }
 
 export async function requireStudent() {
@@ -152,10 +141,9 @@ export function createSessionToken(userId: string, sessionVersion: number) {
   return `${payload}.${sign(payload)}`
 }
 
-export function setSessionCookie(token: string, secure = false) {
-  // Secure 仅在真实 HTTPS 请求下启用；若服务器通过 HTTP 访问（docker compose 未配 TLS），
-  // 带 Secure 的 cookie 会被浏览器拒绝，导致登录后所有接口报 "Login required"。
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}; Max-Age=${SESSION_TTL_SECONDS}`
+export function setSessionCookie(token: string) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${SESSION_TTL_SECONDS}`
 }
 
 export function clearSessionCookie() {

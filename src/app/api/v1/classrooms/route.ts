@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server"
-import { PetStatus, UserRole } from "@prisma/client"
 import { requireTeacher } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 import { createInviteCode } from "@/server/services/classroom.service"
@@ -10,24 +9,10 @@ export async function GET() {
   try {
     const teacher = await requireTeacher()
     const classrooms = await prisma.classroom.findMany({
-      where: teacher.role === UserRole.ADMIN ? {} : { teacherId: teacher.teacherProfileId },
-      // 只统计未删除（ACTIVE）的学生，软删除学生不计入。
-      include: { _count: { select: { students: { where: { status: "ACTIVE" } } } } },
+      where: { teacherId: teacher.teacherProfileId },
+      include: { _count: { select: { students: true } }, pet: true },
       orderBy: { createdAt: "desc" },
     })
-
-    const classroomIds = classrooms.map((classroom) => classroom.id)
-    const graduatedRows = classroomIds.length > 0
-      ? await prisma.studentPet.findMany({
-          where: { status: PetStatus.GRADUATED, student: { classroomId: { in: classroomIds }, status: "ACTIVE" } },
-          select: { student: { select: { classroomId: true } } },
-        })
-      : []
-    const graduatedByClassroom = new Map<string, number>()
-    for (const row of graduatedRows) {
-      const classroomId = row.student.classroomId
-      graduatedByClassroom.set(classroomId, (graduatedByClassroom.get(classroomId) ?? 0) + 1)
-    }
 
     return jsonOk({
       items: classrooms.map((classroom) => ({
@@ -36,7 +21,7 @@ export async function GET() {
         grade: classroom.grade,
         schoolName: classroom.schoolName,
         studentCount: classroom._count.students,
-        graduatedPetCount: graduatedByClassroom.get(classroom.id) ?? 0,
+        petLevel: classroom.pet?.level ?? 1,
       })),
     })
   } catch (error) {
@@ -59,6 +44,7 @@ export async function POST(request: NextRequest) {
         grade: body.grade ?? null,
         schoolName: body.schoolName ?? null,
         inviteCode: createInviteCode(),
+        pet: { create: { name: "云朵龙", species: "dragon" } },
       },
     })
 

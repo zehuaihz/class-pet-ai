@@ -6,6 +6,7 @@ import {
   readLastClassroomId,
   rememberClassroomUser,
 } from "@/lib/last-classroom"
+import { landingPathForRole } from "@/lib/role-landing"
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("")
@@ -28,18 +29,14 @@ export default function LoginPage() {
     }
 
     const payload = await response.json()
-    const user = payload?.data?.user as { id?: string; role?: string } | undefined
-    const userId = user?.id
-    const role = user?.role
+    const userId: string | undefined = payload?.data?.user?.id
+    const role: string | undefined = payload?.data?.user?.role
     const lastClassroomId = readLastClassroomId()
 
-    // Only resume the last class for 班级管理员/系统管理员 and when it belonged
-    // to the same user; students/parents always land on their own home.
+    // Only resume the last class when it belonged to the same teacher; another
+    // teacher on a shared browser should land on the dashboard instead.
     const resumeClassroomId =
-      (role === "TEACHER" || role === "ADMIN") &&
-      userId &&
-      lastClassroomId &&
-      lastClassroomBelongsToUser(userId)
+      role === "TEACHER" && userId && lastClassroomId && lastClassroomBelongsToUser(userId)
         ? lastClassroomId
         : null
 
@@ -47,22 +44,16 @@ export default function LoginPage() {
       rememberClassroomUser(userId)
     }
 
-    const dest =
-      role === "STUDENT"
-        ? "/student"
-        : role === "PARENT"
-          ? "/parent"
-          : resumeClassroomId
-            ? `/classrooms/${resumeClassroomId}/students`
-            : "/dashboard"
-    window.location.href = dest
+    window.location.href = resumeClassroomId
+      ? `/classrooms/${resumeClassroomId}/students`
+      : landingPathForRole(role)
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-sky-50 p-6">
       <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">班级宠物积分系统</h1>
-        <p className="mt-2 text-sm text-slate-600">输入账号密码登录，系统将按账号角色进入对应工作台。</p>
+        <p className="mt-2 text-sm text-slate-600">教师登录后，可管理班级、积分、打卡和宠物成长。</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">账号</span>

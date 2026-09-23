@@ -18,13 +18,15 @@ interface QuickAddModalProps {
   open: boolean
   student: StudentTarget | null
   defaultRules: DefaultRule[]
-  onSubmit: (input: { studentId: string; delta: number; reason: string; ruleId?: string; syncPetGrowth: boolean }) => Promise<void>
+  onSubmit: (input: { studentId: string; delta: number; reason: string; ruleId?: string; syncPetGrowth: boolean; idempotencyKey: string }) => Promise<void>
   onOpenChange: (open: boolean) => void
 }
 
 export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenChange }: QuickAddModalProps) {
   const [delta, setDelta] = useState(1)
   const [reason, setReason] = useState("")
+  const [ruleId, setRuleId] = useState<string | undefined>()
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
   const [submitting, setSubmitting] = useState(false)
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -56,9 +58,12 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
         studentId: student.id,
         delta,
         reason: reason.trim(),
+        ruleId,
         syncPetGrowth: true,
+        idempotencyKey,
       })
       onOpenChange(false)
+      setIdempotencyKey(crypto.randomUUID())
     } finally {
       setSubmitting(false)
     }
@@ -92,13 +97,14 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
                 <button key={rule.id} type="button" className="rounded-full border px-3 py-1 text-sm" onClick={() => {
                   setReason(rule.name)
                   setDelta(rule.pointDelta)
+                  setRuleId(rule.id)
                 }}>{rule.name}</button>
               ))}
             </div>
           </div>
           <label className="block">
             <span className="text-sm font-medium">自定义原因</span>
-            <textarea value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" rows={3} />
+            <textarea value={reason} onChange={(event) => { setReason(event.target.value); setRuleId(undefined) }} className="mt-1 w-full rounded-lg border px-3 py-2" rows={3} />
           </label>
         </div>
         <div className="mt-6 flex justify-end gap-3">

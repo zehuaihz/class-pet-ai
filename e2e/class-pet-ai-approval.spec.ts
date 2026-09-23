@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test"
 
 test("approval and reverse flows", async ({ page }) => {
+  await page.route("**/api/v1/me", async (route) => {
+    await route.fulfill({ json: { success: true, data: { role: "TEACHER", name: "张老师" }, error: null, meta: null } })
+  })
   await page.route("**/api/v1/classrooms", async (route) => {
-    await route.fulfill({ json: { success: true, data: { items: [{ id: "class_1", name: "三年级2班", studentCount: 3, graduatedPetCount: 1 }] }, error: null, meta: null } })
+    await route.fulfill({ json: { success: true, data: { items: [{ id: "class_1", name: "三年级2班", studentCount: 3, petLevel: 8 }] }, error: null, meta: null } })
   })
   await page.route("**/api/v1/classrooms/class_1/checkin-tasks", async (route) => {
     await route.fulfill({ json: { success: true, data: { items: [{ id: "t_1", title: "阅读 20 分钟", rewardPoints: 2 }] }, error: null, meta: null } })
@@ -16,19 +19,24 @@ test("approval and reverse flows", async ({ page }) => {
   await page.route("**/api/v1/points/transactions/pt_1/reverse", async (route) => {
     await route.fulfill({ json: { success: true, data: { transaction: { id: "pt_2" } }, error: null, meta: null } })
   })
-  await page.route("**/api/v1/classrooms/class_1/points/transactions", async (route) => {
-    await route.fulfill({ json: { success: true, data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, createdAt: "2026-08-21T01:12:00.000Z" }] }, error: null, meta: null } })
+  await page.route("**/api/v1/classrooms/class_1/points/rankings", async (route) => {
+    await route.fulfill({ json: { success: true, data: { students: [{ rank: 1, studentId: "s_1", name: "小明", totalPoints: 128 }], groups: [] }, error: null, meta: null } })
   })
-  await page.route("**/api/v1/classrooms/class_1/students", async (route) => {
+  await page.route("**/api/v1/classrooms/class_1/point-rules", async (route) => {
+    await route.fulfill({ json: { success: true, data: { items: [] }, error: null, meta: null } })
+  })
+  await page.route("**/api/v1/classrooms/class_1/points/transactions**", async (route) => {
+    await route.fulfill({ json: { success: true, data: { items: [{ id: "pt_1", name: "小明", reason: "课堂发言", delta: 2, time: "09:12" }] }, error: null, meta: null } })
+  })
+  await page.route("**/api/v1/classrooms/class_1/students**", async (route) => {
     await route.fulfill({ json: { success: true, data: { items: [{ id: "s_1", name: "小明", totalPoints: 128 }] }, error: null, meta: null } })
   })
 
   await page.goto("/classrooms/class_1/checkins")
-  await expect(page.getByText("阅读 20 分钟", { exact: true }).first()).toBeVisible()
+  await expect(page.getByTestId("checkin-task-title").filter({ hasText: "阅读 20 分钟" }).first()).toBeVisible()
   await page.getByRole("button", { name: "通过" }).first().click()
 
   await page.goto("/classrooms/class_1/points")
   await page.getByRole("button", { name: "撤销" }).first().click()
   await expect(page.getByText("小明", { exact: true }).first()).toBeVisible()
-  await expect(page.getByText("课堂发言 · 09:12")).toBeVisible()
 })

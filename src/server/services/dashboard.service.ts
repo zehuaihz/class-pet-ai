@@ -1,51 +1,16 @@
-import { PetStatus } from "@prisma/client"
-import { startOfAppDay } from "@/lib/time"
 import { prisma } from "@/server/db/prisma"
+import { getClassroomPet } from "@/server/services/pet-growth.service"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
 
-export interface DashboardRecentTransaction {
-  id: string
-  name: string
-  reason: string
-  delta: number
-}
-
-export interface ClassroomDashboard {
-  today: {
-    checkinRate: number
-    pointCount: number
-    missedCount: number
-  }
-  zoo: {
-    graduatedCount: number
-    growingCount: number
-    availableBadges: number
-  }
-  topStudents: Array<{ id: string; name: string; totalPoints: number }>
-  activeTasks: Array<{ id: string; title: string }>
-  recentTransactions: DashboardRecentTransaction[]
-}
-
-export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string): Promise<ClassroomDashboard> {
-  const [zoo, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
-    Promise.all([
-      prisma.studentPet.count({ where: { status: PetStatus.GRADUATED, student: { classroomId, status: "ACTIVE" } } }),
-      prisma.studentPet.count({ where: { status: PetStatus.GROWING, student: { classroomId, status: "ACTIVE" } } }),
-      prisma.badge.count({ where: { student: { classroomId, status: "ACTIVE" }, status: "AVAILABLE" } }),
-    ]).then(([graduatedCount, growingCount, availableBadges]) => ({ graduatedCount, growingCount, availableBadges })),
+export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string) {
+  const [pet, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
+    getClassroomPet(classroomId),
     prisma.student.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { totalPoints: "desc" }, take: 3 }),
     prisma.pointTransaction.findMany({ where: { classroomId }, orderBy: { createdAt: "desc" }, take: 5, include: { student: true, group: true } }),
     prisma.checkinTask.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.student.count({ where: { classroomId, status: "ACTIVE" } }),
-    prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfAppDay() } } }),
+    prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfToday() } } }),
   ])
-
-  const recentActivity = recentTransactions.map((transaction) => ({
-    id: transaction.id,
-    name: transaction.student?.name ?? transaction.group?.name ?? "未知",
-    reason: transaction.reason,
-    delta: transaction.delta,
-  }))
 
   const stats = actorTeacherId
     ? await getClassroomCheckinStats(actorTeacherId, classroomId)
@@ -60,11 +25,17 @@ export async function getClassroomDashboard(classroomId: string, actorTeacherId?
       pointCount: todayTransactions.reduce((sum, tx) => sum + tx.delta, 0),
       missedCount,
     },
-    zoo,
+    pet,
     topStudents: students,
+    recentTransactions,
     activeTasks,
-    recentTransactions: recentActivity,
   }
+}
+
+function startOfToday(): Date {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today
 }
 
 async function getDashboardStatsWithoutAuthorization(classroomId: string, taskIds: string[]) {

@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test"
 
 test("AI failure state stays visible", async ({ page }) => {
+  await page.route("**/api/v1/me", async (route) => {
+    await route.fulfill({ json: { success: true, data: { role: "TEACHER", name: "张老师" }, error: null, meta: null } })
+  })
+  await page.route("**/api/v1/classrooms/class_1/students**", async (route) => {
+    await route.fulfill({ json: { success: true, data: { items: [{ id: "s_1", name: "小明" }] }, error: null, meta: null } })
+  })
   await page.route("**/api/v1/ai/comment-draft", async (route) => {
     await route.fulfill({ status: 500, json: { success: false, data: null, error: { code: "INTERNAL_ERROR", message: "AI failed" }, meta: null } })
   })

@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "class_pet_user_session",
+      "value": "eyJ1c2VySWQiOiJjbXVlMXpyOG4wMDAwb2ExcjVpMDNkOXB3IiwidiI6MCwiZXhwIjoxNzkyNzYzNDQ1fQ.1ULH_dA2aZ-EXu2X2chR4NJzmUYQeuOXGlDnEuYFoSc",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1792763445.465,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

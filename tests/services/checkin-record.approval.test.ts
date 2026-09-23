@@ -6,8 +6,11 @@ const dbMocks = vi.hoisted(() => ({
   checkinRecordTxFindUnique: vi.fn(),
   pointTransactionCreate: vi.fn(),
   studentFindFirst: vi.fn(),
-  studentUpdate: vi.fn(),
-  studentPetFindFirst: vi.fn(),
+  studentFindUnique: vi.fn(),
+  studentUpdateMany: vi.fn(),
+  petFindUnique: vi.fn(),
+  petUpdate: vi.fn(),
+  petGrowthLogCreate: vi.fn(),
   transaction: vi.fn(),
   assertTeacherOwnsClassroom: vi.fn(),
 }))
@@ -45,8 +48,13 @@ describe("approveCheckinRecord", () => {
   const tx = {
     checkinRecord: { updateMany: dbMocks.checkinRecordUpdateMany, findUnique: dbMocks.checkinRecordTxFindUnique },
     pointTransaction: { create: dbMocks.pointTransactionCreate },
-    student: { findFirst: dbMocks.studentFindFirst, update: dbMocks.studentUpdate },
-    studentPet: { findFirst: dbMocks.studentPetFindFirst },
+    student: {
+      findFirst: dbMocks.studentFindFirst,
+      findUnique: dbMocks.studentFindUnique,
+      updateMany: dbMocks.studentUpdateMany,
+    },
+    pet: { findUnique: dbMocks.petFindUnique, update: dbMocks.petUpdate },
+    petGrowthLog: { create: dbMocks.petGrowthLogCreate },
   }
 
   beforeEach(() => {
@@ -62,8 +70,9 @@ describe("approveCheckinRecord", () => {
       source: "CHECKIN",
     })
     dbMocks.studentFindFirst.mockResolvedValue({ id: record.studentId, classroomId: record.task.classroomId })
-    dbMocks.studentUpdate.mockResolvedValue({ totalPoints: 10 })
-    dbMocks.studentPetFindFirst.mockResolvedValue(null)
+    dbMocks.studentUpdateMany.mockResolvedValue({ count: 1 })
+    dbMocks.studentFindUnique.mockResolvedValue({ totalPoints: 10 })
+    dbMocks.petFindUnique.mockResolvedValue(null)
   })
 
   it("approves the record and creates its reward in one database transaction", async () => {

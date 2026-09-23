@@ -1,4 +1,5 @@
 import { AiJobStatus, AiJobType, Prisma } from "@prisma/client"
+import { randomUUID } from "node:crypto"
 import { z } from "zod"
 import { prisma } from "@/server/db/prisma"
 import { assertTeacherOwnsClassroom } from "@/server/services/classroom.service"
@@ -12,6 +13,8 @@ const createAiJobSchema = z.object({
   provider: z.string().optional(),
   modelName: z.string().optional(),
 })
+
+export const AI_JOB_LEASE_MS = 5 * 60_000
 
 export async function createAiJob(input: unknown) {
   const parsed = createAiJobSchema.parse(input)
@@ -30,23 +33,55 @@ export async function createAiJob(input: unknown) {
   })
 }
 
-export async function claimAiJob(jobId: string): Promise<{ claimed: boolean }> {
+export async function claimAiJob(jobId: string): Promise<{ claimed: boolean; claimToken?: string }> {
+  const now = new Date()
+  const claimToken = randomUUID()
+  const current = await prisma.aiJob.findUnique({ where: { id: jobId }, select: { maxAttempts: true, attemptCount: true, status: true, lockedAt: true } })
+  if (!current) return { claimed: false }
+  const stale = current.status === AiJobStatus.RUNNING && current.lockedAt !== null && current.lockedAt < new Date(now.getTime() - AI_JOB_LEASE_MS)
+  if (stale && current.attemptCount >= current.maxAttempts) {
+    await prisma.aiJob.updateMany({
+      where: { id: jobId, status: AiJobStatus.RUNNING, lockedAt: current.lockedAt },
+      data: { status: AiJobStatus.FAILED, finishedAt: now, startedAt: null, lockedAt: null, claimToken: null, lastErrorCode: "MAX_ATTEMPTS", errorMessage: "AI job lease expired after max attempts" },
+    })
+    return { claimed: false }
+  }
   const updated = await prisma.aiJob.updateMany({
-    where: { id: jobId, status: AiJobStatus.PENDING },
-    data: { status: AiJobStatus.RUNNING, startedAt: new Date(), lockedAt: new Date() },
+    where: {
+      id: jobId,
+      attemptCount: { lt: current.maxAttempts },
+      OR: [
+        { status: AiJobStatus.PENDING, availableAt: { lte: now } },
+        { status: AiJobStatus.RUNNING, lockedAt: { lt: new Date(now.getTime() - AI_JOB_LEASE_MS) } },
+      ],
+    },
+    data: {
+      status: AiJobStatus.RUNNING,
+      attemptCount: { increment: 1 },
+      startedAt: now,
+      lockedAt: now,
+      claimToken,
+      finishedAt: null,
+    },
   })
-  return { claimed: updated.count > 0 }
+  return updated.count > 0 ? { claimed: true, claimToken } : { claimed: false }
 }
 
-export async function completeAiJob(jobId: string, output: Prisma.InputJsonValue, usage: { inputTokens?: number; outputTokens?: number; latencyMs?: number; providerRequestId?: string }) {
+export async function completeAiJob(
+  jobId: string,
+  claimToken: string,
+  output: Prisma.InputJsonValue,
+  usage: { inputTokens?: number; outputTokens?: number; latencyMs?: number; providerRequestId?: string } = {},
+) {
   return prisma.aiJob.updateMany({
-    where: { id: jobId, status: AiJobStatus.RUNNING },
+    where: { id: jobId, status: AiJobStatus.RUNNING, claimToken },
     data: {
       status: AiJobStatus.SUCCEEDED,
       outputJson: output,
       finishedAt: new Date(),
       startedAt: null,
       lockedAt: null,
+      claimToken: null,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       latencyMs: usage.latencyMs,
@@ -56,27 +91,42 @@ export async function completeAiJob(jobId: string, output: Prisma.InputJsonValue
   })
 }
 
-export async function failAiJob(jobId: string, errorCode: string, message: string, retryable: boolean, maxAttempts = 5) {
-  const requeued = await prisma.aiJob.updateMany({
-    where: { id: jobId, status: AiJobStatus.RUNNING, attemptCount: { lt: maxAttempts } },
-    data: retryable
-      ? { status: AiJobStatus.PENDING, attemptCount: { increment: 1 }, lastErrorCode: errorCode, errorMessage: message, availableAt: new Date(Date.now() + backoffMs(1)), startedAt: null, lockedAt: null }
-      : { status: AiJobStatus.FAILED, attemptCount: { increment: 1 }, lastErrorCode: errorCode, errorMessage: message, finishedAt: new Date() },
-  })
-  if (requeued.count > 0) return requeued
+export async function failAiJob(jobId: string, claimToken: string, errorCode: string, message: string, retryable: boolean) {
+  const job = await prisma.aiJob.findUnique({ where: { id: jobId }, select: { maxAttempts: true, attemptCount: true } })
+  if (!job) return { count: 0 }
 
+  const canRetry = retryable && job.attemptCount < job.maxAttempts
+  const now = new Date()
   return prisma.aiJob.updateMany({
-    where: { id: jobId, status: AiJobStatus.RUNNING },
-    data: { status: AiJobStatus.FAILED, attemptCount: { increment: 1 }, lastErrorCode: errorCode, errorMessage: message, finishedAt: new Date() },
+    where: { id: jobId, status: AiJobStatus.RUNNING, claimToken },
+    data: canRetry
+      ? {
+          status: AiJobStatus.PENDING,
+          lastErrorCode: errorCode,
+          errorMessage: message,
+          availableAt: new Date(now.getTime() + backoffMs(job.attemptCount)),
+          startedAt: null,
+          lockedAt: null,
+          claimToken: null,
+        }
+      : {
+          status: AiJobStatus.FAILED,
+          lastErrorCode: errorCode,
+          errorMessage: message,
+          finishedAt: now,
+          startedAt: null,
+          lockedAt: null,
+          claimToken: null,
+        },
   })
 }
 
 function backoffMs(attempt: number): number {
-  return Math.min(60_000, 2 ** attempt * 1000)
+  return Math.min(60_000, 2 ** Math.max(0, attempt - 1) * 1_000)
 }
 
-export async function resolveAiJob(jobId: string, outputJson: Prisma.InputJsonValue) {
-  return completeAiJob(jobId, outputJson, {})
+export async function resolveAiJob(jobId: string, claimToken: string, outputJson: Prisma.InputJsonValue) {
+  return completeAiJob(jobId, claimToken, outputJson, {})
 }
 
 export function sanitizeAiText(input: string): string {
@@ -93,11 +143,12 @@ export async function findOwnedAiJob(actorTeacherId: string, jobId: string) {
 }
 
 export async function findClaimableAiJobs(limit = 10) {
+  const now = new Date()
   return prisma.aiJob.findMany({
     where: {
       OR: [
-        { status: AiJobStatus.PENDING, availableAt: { lte: new Date() } },
-        { status: AiJobStatus.RUNNING, lockedAt: { lt: new Date(Date.now() - 5 * 60_000) } },
+        { status: AiJobStatus.PENDING, availableAt: { lte: now } },
+        { status: AiJobStatus.RUNNING, lockedAt: { lt: new Date(now.getTime() - AI_JOB_LEASE_MS) } },
       ],
     },
     take: limit,

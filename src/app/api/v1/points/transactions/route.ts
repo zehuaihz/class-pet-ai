@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     const delta = Number(body.delta)
     const reason = String(body.reason ?? "").trim()
 
-    if (!classroomId || !Number.isFinite(delta) || !reason) {
-      throw new AppError("VALIDATION_ERROR", "classroomId, delta, and reason required", 422)
+    if (!classroomId || !Number.isInteger(delta) || !reason || Math.abs(delta) > 1000) {
+      throw new AppError("VALIDATION_ERROR", "classroomId, integer delta within range, and reason required", 422)
     }
 
     const result = await createPointTransaction({
@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
       studentId: body.studentId ?? null,
       groupId: body.groupId ?? null,
       ruleId: body.ruleId ?? null,
+      idempotencyKey: body.idempotencyKey ?? null,
+      syncPetGrowth: body.syncPetGrowth !== false,
       delta,
       reason,
       source: body.source && body.source in PointTransactionSource ? body.source : "MANUAL",

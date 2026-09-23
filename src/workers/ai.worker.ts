@@ -18,7 +18,10 @@ export async function runAiWorker(maxIterations?: number) {
   }
 }
 
-if (require.main === module) {
+const isMainModule = process.argv[1] !== undefined &&
+  new URL(`file://${process.argv[1]}`).href === import.meta.url
+
+if (isMainModule) {
   void runAiWorker()
 }
 
