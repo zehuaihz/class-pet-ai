@@ -2,10 +2,10 @@
   "cookies": [
     {
       "name": "class_pet_user_session",
-      "value": "eyJ1c2VySWQiOiJjbXVlMXpyOG4wMDAwb2ExcjVpMDNkOXB3IiwidiI6MCwiZXhwIjoxNzkyNzYzNDQ1fQ.1ULH_dA2aZ-EXu2X2chR4NJzmUYQeuOXGlDnEuYFoSc",
+      "value": "eyJ1c2VySWQiOiJjbXVlYjNycW0wMDAwb2FpM3EzdjFreGNoIiwidiI6MCwiZXhwIjoxNzkyNzcyNDEzfQ._CrZtfWRepJfBwsJWj5RB1jb-1sfgvWeR2S43v7sOQY",
       "domain": "localhost",
       "path": "/",
-      "expires": 1792763445.465,
+      "expires": 1792772413.746,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"

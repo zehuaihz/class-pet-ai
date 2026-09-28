@@ -141,9 +141,29 @@ export function createSessionToken(userId: string, sessionVersion: number) {
   return `${payload}.${sign(payload)}`
 }
 
-export function setSessionCookie(token: string) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${SESSION_TTL_SECONDS}`
+/**
+ * Whether the browser is talking to us over TLS.
+ *
+ * The `Secure` attribute is a directive to the browser, so it must reflect the
+ * protocol the browser actually used. Keying it off `NODE_ENV` alone breaks
+ * every login on an HTTP-only deployment (the browser silently drops the
+ * cookie), which is why the request is consulted first.
+ */
+export function isSecureRequest(request?: Request): boolean {
+  const forwardedProto = request?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase()
+  if (forwardedProto) return forwardedProto === "https"
+  if (request) {
+    try {
+      return new URL(request.url).protocol === "https:"
+    } catch {
+      // Fall through to the environment default below.
+    }
+  }
+  return process.env.NODE_ENV === "production"
+}
+
+export function setSessionCookie(token: string, secure = isSecureRequest()) {
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}; Max-Age=${SESSION_TTL_SECONDS}`
 }
 
 export function clearSessionCookie() {

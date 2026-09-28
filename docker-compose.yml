@@ -5,8 +5,10 @@ services:
       POSTGRES_DB: class_pet_ai
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    # Host-only binding: reachable from the server itself (backup scripts, psql)
+    # but never from the public internet.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,25 +20,71 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+
+  # One-shot migration job. Runs from the worker image because the Prisma CLI is
+  # a devDependency and is absent from the slim runner image.
+  migrate:
+    build:
+      context: .
+      target: worker
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment: &app_env
+      # The app's own .env points DATABASE_URL at localhost for host-side
+      # tooling; inside the compose network the service name is used instead.
+      DATABASE_URL: ${APP_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/class_pet_ai}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set to a random value of at least 32 characters}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_API_KEY: ${AI_API_KEY:-}
+      TEACHER_LOGIN_EMAIL: ${TEACHER_LOGIN_EMAIL:?TEACHER_LOGIN_EMAIL must be set}
+      TEACHER_LOGIN_PASSWORD: ${TEACHER_LOGIN_PASSWORD:?TEACHER_LOGIN_PASSWORD must be set}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   web:
-    build: .
+    build:
+      context: .
+      target: runner
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/class_pet_ai
-      SESSION_SECRET: change-me
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      AI_PROVIDER: mock
-      AI_API_KEY: ""
-      TEACHER_LOGIN_EMAIL: teacher@example.com
-      TEACHER_LOGIN_PASSWORD: password123
+      <<: *app_env
+      # Next's standalone server binds to $HOSTNAME when it is set, and Docker
+      # sets it to the container id — which makes the container's own
+      # 127.0.0.1 (and therefore the healthcheck below) refuse connections.
+      HOSTNAME: "0.0.0.0"
+    # Served directly on the host IP until a reverse proxy fronts it. Once TLS
+    # terminates on this host, change this to "127.0.0.1:3000:3000".
     ports:
       - "3000:3000"
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+    healthcheck:
+      # 127.0.0.1, not localhost: localhost resolves to ::1 first and the
+      # standalone server only listens on IPv4.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # AI jobs are claimed from PostgreSQL by this poller; without it every AiJob
+  # stays PENDING forever.
+  worker:
+    build:
+      context: .
+      target: worker
+    environment: *app_env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

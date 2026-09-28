@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateTeacher, authenticateWithCredentials } from "@/server/services/auth.service"
-import { createSessionToken, setSessionCookie } from "@/server/auth/session"
+import { createSessionToken, isSecureRequest, setSessionCookie } from "@/server/auth/session"
 import { jsonError } from "@/server/utils/api"
 import { ok } from "@/server/utils/response-envelope"
 
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         user: { id: user.id, role: user.role, name: user.name },
         session: { expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() },
       }),
-      { headers: { "Set-Cookie": setSessionCookie(token) } },
+      { headers: { "Set-Cookie": setSessionCookie(token, isSecureRequest(request)) } },
     )
   } catch (error) {
     return jsonError(error)
