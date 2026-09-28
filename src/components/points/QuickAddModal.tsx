@@ -22,11 +22,19 @@ interface QuickAddModalProps {
   onOpenChange: (open: boolean) => void
 }
 
+// crypto.randomUUID() is only available in secure contexts (HTTPS/localhost).
+// The production deployment is plain HTTP, so fall back to getRandomValues.
+function createIdempotencyKey(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID()
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
 export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenChange }: QuickAddModalProps) {
   const [delta, setDelta] = useState(1)
   const [reason, setReason] = useState("")
   const [ruleId, setRuleId] = useState<string | undefined>()
-  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(createIdempotencyKey)
   const [submitting, setSubmitting] = useState(false)
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -63,7 +71,7 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
         idempotencyKey,
       })
       onOpenChange(false)
-      setIdempotencyKey(crypto.randomUUID())
+      setIdempotencyKey(createIdempotencyKey())
     } finally {
       setSubmitting(false)
     }
