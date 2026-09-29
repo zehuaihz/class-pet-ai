@@ -18,6 +18,18 @@ const navItems = [
   { href: "/admin", label: "管理后台", roles: ["ADMIN"] },
 ]
 
+// 班级子模块导航（教师）：挂在当前班级下；在非班级路由时回落到
+// 最近使用的班级，保证从首页也能直达。
+const classroomNavItems = [
+  { segment: "students", label: "学生管理" },
+  { segment: "points", label: "积分管理" },
+  { segment: "checkins", label: "打卡任务" },
+  { segment: "pet", label: "宠物成长" },
+  { segment: "rewards", label: "奖励兑换" },
+  { segment: "ai", label: "AI 工作台" },
+  { segment: "screen", label: "班级大屏" },
+]
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -58,6 +70,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.push("/auth/login")
   }
 
+  const classroomNav = useMemo(() => {
+    if (role !== "TEACHER" || !currentClassroomId) return []
+    return classroomNavItems.map((item) => ({
+      href: `/classrooms/${currentClassroomId}/${item.segment}`,
+      label: item.label,
+    }))
+  }, [role, currentClassroomId])
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b bg-white px-6 py-4">
@@ -80,6 +100,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </div>
+          {classroomNav.length > 0 ? (
+            <div className="mt-4 border-t pt-4">
+              <div className="px-3 pb-2 text-xs font-medium text-slate-400">班级模块</div>
+              <div className="space-y-1">
+                {classroomNav.map((item) => {
+                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`block rounded-lg px-3 py-2 text-sm transition hover:bg-slate-100 ${active ? "bg-green-50 font-medium text-green-700" : "text-slate-600"}`}
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
         </nav>
         <main className="flex-1 p-6">{children}</main>
       </div>
