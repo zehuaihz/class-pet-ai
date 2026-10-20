@@ -1,3 +1,4 @@
+import { PetStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { AppError } from "@/server/utils/errors"
 
@@ -41,9 +42,9 @@ export async function getChildDetail(parentChildStudentIds: string[], studentId:
       orderBy: { createdAt: "desc" },
       take: RECENT_LIMIT,
     }),
-    prisma.pet.findUnique({
-      where: { classroomId: student.classroomId },
-      select: { name: true, level: true, mood: true },
+    prisma.studentPet.findFirst({
+      where: { studentId, status: PetStatus.GROWING },
+      select: { name: true, level: true, speciesKey: true },
     }),
   ])
 
@@ -76,7 +77,7 @@ export async function getChildDetail(parentChildStudentIds: string[], studentId:
     redemptions: redemptions.map((redemption) => ({
       id: redemption.id,
       rewardName: redemption.rewardItem.name,
-      pointsSpent: redemption.pointsSpent,
+      badgesSpent: redemption.badgesSpent,
       status: redemption.status,
       createdAt: redemption.createdAt,
       fulfilledAt: redemption.fulfilledAt,

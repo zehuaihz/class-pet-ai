@@ -1,16 +1,24 @@
+import { PetStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { getClassroomPet } from "@/server/services/pet-growth.service"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
 
 export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string) {
-  const [pet, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
-    getClassroomPet(classroomId),
+  const [pets, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
+    prisma.studentPet.findMany({
+      where: { student: { classroomId }, status: PetStatus.GROWING },
+      select: { name: true, level: true },
+    }),
     prisma.student.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { totalPoints: "desc" }, take: 3 }),
     prisma.pointTransaction.findMany({ where: { classroomId }, orderBy: { createdAt: "desc" }, take: 5, include: { student: true, group: true } }),
     prisma.checkinTask.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.student.count({ where: { classroomId, status: "ACTIVE" } }),
     prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfToday() } } }),
   ])
+
+  const pet = {
+    name: "班级宠物",
+    level: pets.length > 0 ? Math.max(...pets.map((item) => item.level)) : 0,
+  }
 
   const stats = actorTeacherId
     ? await getClassroomCheckinStats(actorTeacherId, classroomId)

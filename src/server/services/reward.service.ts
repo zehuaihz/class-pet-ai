@@ -6,7 +6,7 @@ import { AppError } from "@/server/utils/errors"
 const rewardItemSchema = z.object({
   name: z.string().trim().min(1),
   description: z.string().trim().optional(),
-  costPoints: z.number().int().min(1),
+  costBadges: z.number().int().min(1),
   stock: z.number().int().min(0).nullable().optional(),
   enabled: z.boolean().default(true),
 })

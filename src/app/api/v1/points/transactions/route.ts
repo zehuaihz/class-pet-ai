@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
       groupId: body.groupId ?? null,
       ruleId: body.ruleId ?? null,
       idempotencyKey: body.idempotencyKey ?? null,
-      syncPetGrowth: body.syncPetGrowth !== false,
       delta,
       reason,
       source: body.source && body.source in PointTransactionSource ? body.source : "MANUAL",

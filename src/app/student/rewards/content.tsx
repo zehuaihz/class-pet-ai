@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { AppShell } from "@/components/layout/AppShell"
 import { apiRequest } from "@/lib/api-client"
 
-interface RewardItem { id: string; name: string; description: string | null; costPoints: number; stock: number | null }
-interface Redemption { id: string; pointsSpent: number; status: string; rewardItem: { name: string }; createdAt: string }
+interface RewardItem { id: string; name: string; description: string | null; costBadges: number; stock: number | null }
+interface Redemption { id: string; badgesSpent: number; status: string; rewardItem: { name: string }; createdAt: string }
 
 const REDEMPTION_LABELS: Record<string, string> = {
   PENDING: "待审批",
@@ -17,18 +17,18 @@ const REDEMPTION_LABELS: Record<string, string> = {
 export default function StudentRewardsPage() {
   const [items, setItems] = useState<RewardItem[]>([])
   const [redemptions, setRedemptions] = useState<Redemption[]>([])
-  const [totalPoints, setTotalPoints] = useState(0)
+  const [availableBadges, setAvailableBadges] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const data = await apiRequest<{ items: RewardItem[]; totalPoints: number; redemptions: Redemption[] }>(
+      const data = await apiRequest<{ items: RewardItem[]; availableBadges: number; redemptions: Redemption[] }>(
         "/api/v1/student/rewards",
       )
       setItems(data.items)
-      setTotalPoints(data.totalPoints)
+      setAvailableBadges(data.availableBadges)
       setRedemptions(data.redemptions ?? [])
       setError(null)
     } catch (err) {
@@ -64,25 +64,25 @@ export default function StudentRewardsPage() {
     <AppShell>
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">奖励商城</h1>
-        <div className="text-slate-600">我的积分：{totalPoints}</div>
+        <div className="text-slate-600">我的徽章：{availableBadges}</div>
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
         {notice ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">{notice}</div> : null}
 
         <div className="grid gap-4 md:grid-cols-3">
           {items.map((item) => {
             const soldOut = item.stock !== null && item.stock <= 0
-            const affordable = totalPoints >= item.costPoints
+            const affordable = availableBadges >= item.costBadges
             return (
               <div key={item.id} className="rounded-xl border p-4">
                 <div className="font-medium">{item.name}</div>
                 {item.description ? <div className="mt-1 text-sm text-slate-500">{item.description}</div> : null}
-                <div className="mt-2 text-sm text-slate-500">{item.costPoints} 分 · 库存 {item.stock ?? "无限"}</div>
+                <div className="mt-2 text-sm text-slate-500">{item.costBadges} 徽章 · 库存 {item.stock ?? "无限"}</div>
                 <button
                   className="mt-3 rounded-lg bg-green-600 px-3 py-1 text-white disabled:opacity-50"
                   disabled={!affordable || soldOut || pendingId === item.id}
                   onClick={() => redeem(item)}
                 >
-                  {soldOut ? "已售罄" : pendingId === item.id ? "提交中..." : affordable ? "兑换" : "积分不足"}
+                  {soldOut ? "已售罄" : pendingId === item.id ? "提交中..." : affordable ? "兑换" : "徽章不足"}
                 </button>
               </div>
             )
@@ -103,7 +103,7 @@ export default function StudentRewardsPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-slate-600">{REDEMPTION_LABELS[redemption.status] ?? redemption.status}</div>
-                    <div className="text-sm text-slate-500">-{redemption.pointsSpent} 分</div>
+                    <div className="text-sm text-slate-500">-{redemption.badgesSpent} 徽章</div>
                   </div>
                 </div>
               ))}
