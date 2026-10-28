@@ -71,16 +71,16 @@ export default function AdminPage() {
 
   return (
     <AppShell>
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold">管理后台</h1>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {notice ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">{notice}</div> : null}
+      <div className="mx-auto max-w-5xl space-y-5">
+        <h1 className="font-display rise-in flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🛠️</span>管理后台</h1>
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {notice ? <div className="sticker sticker-quiet !border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">{notice}</div> : null}
 
-        <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-5 shadow-sm">
+        <div className="sticker sticker-quiet rise-in stagger-2 flex flex-wrap items-end gap-3 p-5">
           <label className="text-sm">
-            <span className="text-slate-600">角色</span>
+            <span className="font-semibold text-ink-soft">角色</span>
             <select
-              className="mt-1 block rounded-lg border px-3 py-2"
+              className="sticker-input mt-1 block cursor-pointer"
               value={roleFilter}
               onChange={(event) => {
                 setPage(1)
@@ -95,9 +95,9 @@ export default function AdminPage() {
             </select>
           </label>
           <label className="text-sm">
-            <span className="text-slate-600">状态</span>
+            <span className="font-semibold text-ink-soft">状态</span>
             <select
-              className="mt-1 block rounded-lg border px-3 py-2"
+              className="sticker-input mt-1 block cursor-pointer"
               value={statusFilter}
               onChange={(event) => {
                 setPage(1)
@@ -111,27 +111,27 @@ export default function AdminPage() {
               ))}
             </select>
           </label>
-          <label className="flex-1 text-sm">
-            <span className="text-slate-600">姓名关键字</span>
+          <label className="min-w-48 flex-1 text-sm">
+            <span className="font-semibold text-ink-soft">姓名关键字</span>
             <input
-              className="mt-1 w-full rounded-lg border px-3 py-2"
+              className="sticker-input mt-1 w-full"
               value={keyword}
               onChange={(event) => {
                 setPage(1)
                 setKeyword(event.target.value)
               }}
-              placeholder="搜索用户姓名"
+              placeholder="🔍 搜索用户姓名"
             />
           </label>
         </div>
 
-        {users.length === 0 ? <div className="rounded-xl bg-white p-5 text-slate-500 shadow-sm">暂无用户</div> : null}
+        {users.length === 0 ? <div className="sticker sticker-quiet p-8 text-center text-ink-soft">暂无用户</div> : null}
 
         {users.length > 0 ? (
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="sticker sticker-quiet rise-in stagger-3 overflow-x-auto p-5">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-slate-500">
+                <tr className="font-display text-ink-soft">
                   <th className="py-2">姓名</th>
                   <th>角色</th>
                   <th>邮箱</th>
@@ -141,16 +141,16 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-t">
-                    <td className="py-2">{user.name}</td>
-                    <td>{user.role}</td>
-                    <td>{user.email ?? "-"}</td>
+                  <tr key={user.id} className="border-t-2 border-dashed border-ink/20">
+                    <td className="py-2.5 font-semibold text-ink">{user.name}</td>
+                    <td className="text-ink-soft">{user.role}</td>
+                    <td className="text-ink-soft">{user.email ?? "-"}</td>
                     <td>
-                      <span className={user.status === "ACTIVE" ? "text-green-700" : "text-red-600"}>{user.status}</span>
+                      <span className={`inline-block rounded-full border-2 px-2 py-0.5 text-xs font-bold ${user.status === "ACTIVE" ? "border-forest bg-forest-mist text-forest-deep" : "border-berry bg-berry-soft text-berry"}`}>{user.status}</span>
                     </td>
                     <td>
                       <button
-                        className="rounded-lg border px-3 py-1 disabled:opacity-50"
+                        className="btn-outline !px-3 !py-0.5 text-xs disabled:opacity-40"
                         disabled={busyId === user.id}
                         onClick={() => changeStatus(user, user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE")}
                       >
@@ -162,24 +162,24 @@ export default function AdminPage() {
               </tbody>
             </table>
 
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-              <span>
+            <div className="mt-4 flex items-center justify-between text-sm text-ink-soft">
+              <span className="font-display font-bold">
                 共 {total} 条 · 第 {page}/{totalPages} 页
               </span>
               <div className="flex gap-2">
                 <button
-                  className="rounded-lg border px-3 py-1 disabled:opacity-50"
+                  className="btn-outline !px-3 !py-0.5 text-xs disabled:opacity-40"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
-                  上一页
+                  ← 上一页
                 </button>
                 <button
-                  className="rounded-lg border px-3 py-1 disabled:opacity-50"
+                  className="btn-outline !px-3 !py-0.5 text-xs disabled:opacity-40"
                   disabled={page >= totalPages}
                   onClick={() => setPage((current) => current + 1)}
                 >
-                  下一页
+                  下一页 →
                 </button>
               </div>
             </div>

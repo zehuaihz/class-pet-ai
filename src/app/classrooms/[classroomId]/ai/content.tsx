@@ -35,36 +35,42 @@ export default function AiWorkbenchPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">AI 教辅工作台</h1>
-          <p className="text-slate-600">生成评语草稿、班情总结和打卡任务，不自动外发。</p>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="rise-in">
+          <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🤖</span>AI 教辅工作台</h1>
+          <p className="mt-1 text-sm text-ink-soft">生成评语草稿、班情总结和打卡任务，不自动外发。</p>
         </div>
-        {loading ? <div className="rounded-lg bg-white p-5 shadow-sm">加载中...</div> : null}
-        {!classroomId ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">缺少班级上下文，请从班级列表进入。</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
+        {!classroomId ? <div className="sticker sticker-quiet bg-butter-soft p-4 font-semibold text-tangerine">缺少班级上下文，请从班级列表进入。</div> : null}
         <section className="grid gap-4 md:grid-cols-3">
-          <Link href={classroomId ? `/classrooms/${classroomId}/ai/comment` : "/classrooms"} className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="font-semibold">评语生成</div>
-            <div className="mt-2 text-sm text-slate-500">基于积分和打卡生成学生评语草稿</div>
+          <Link href={classroomId ? `/classrooms/${classroomId}/ai/comment` : "/classrooms"} className="sticker sticker-hover rise-in stagger-2 block p-5">
+            <div className="sticker-dot bg-sky-soft" aria-hidden="true">✍️</div>
+            <div className="font-display mt-3 text-lg font-bold text-ink">评语生成</div>
+            <div className="mt-1 text-sm text-ink-soft">基于积分和打卡生成学生评语草稿</div>
           </Link>
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="font-semibold">班情总结</div>
-            <div className="mt-2 text-sm text-slate-500">班级宠物 {dashboard?.pet.name ?? "云朵龙"} Lv.{dashboard?.pet.level ?? 8}</div>
+          <div className="sticker sticker-hover rise-in stagger-3 p-5">
+            <div className="sticker-dot bg-butter-soft" aria-hidden="true">📊</div>
+            <div className="font-display mt-3 text-lg font-bold text-ink">班情总结</div>
+            <div className="mt-1 text-sm text-ink-soft">班级宠物 {dashboard?.pet.name ?? "云朵龙"} Lv.{dashboard?.pet.level ?? 8}</div>
           </div>
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="font-semibold">任务生成</div>
-            <div className="mt-2 text-sm text-slate-500">当前活跃任务 {dashboard?.activeTasks.length ?? 0} 个</div>
+          <div className="sticker sticker-hover rise-in stagger-4 p-5">
+            <div className="sticker-dot bg-forest-mist" aria-hidden="true">📝</div>
+            <div className="font-display mt-3 text-lg font-bold text-ink">任务生成</div>
+            <div className="mt-1 text-sm text-ink-soft">当前活跃任务 {dashboard?.activeTasks.length ?? 0} 个</div>
           </div>
         </section>
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">AI 推荐对象</h2>
-          <div className="mt-4 space-y-3">
+        <section className="sticker sticker-quiet rise-in stagger-5 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">💡</span>AI 推荐对象</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {(dashboard?.topStudents ?? []).map((student) => (
-              <div key={student.id} className="rounded-lg border p-3">
-                <div className="font-medium">{student.name}</div>
-                <div className="text-sm text-slate-500">{student.totalPoints} 分</div>
+              <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-white p-3">
+                <div className="font-semibold text-ink">{student.name}</div>
+                <div className="font-display font-bold text-forest">{student.totalPoints} 分</div>
               </div>
             ))}
+            {(dashboard?.topStudents ?? []).length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed border-ink/30 p-6 text-center text-sm text-ink-faint sm:col-span-2 lg:col-span-3">暂无推荐数据</div>
+            ) : null}
           </div>
         </section>
       </div>

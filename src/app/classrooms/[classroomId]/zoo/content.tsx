@@ -61,29 +61,39 @@ export default function ZooPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{systemName}</h1>
-            <p className="text-slate-600">每位学生一只专属宠物，喂食推进成长，满级毕业领徽章。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink">
+              <span aria-hidden="true" className="inline-block">🐾</span>
+              {systemName}
+            </h1>
+            <p className="mt-1 text-sm text-ink-soft">每位学生一只专属宠物，喂食推进成长，满级毕业领徽章。</p>
           </div>
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" disabled={assigning || unassigned === 0} onClick={assignAll}>
-            {assigning ? "分配中..." : unassigned > 0 ? `一键分配宠物（${unassigned} 人）` : "已全部拥有宠物"}
+          <button
+            className="btn-tangerine disabled:pointer-events-none disabled:opacity-40"
+            disabled={assigning || unassigned === 0}
+            onClick={assignAll}
+          >
+            {assigning ? "分配中..." : unassigned > 0 ? `🎲 一键分配宠物（${unassigned} 人）` : "✅ 已全部拥有宠物"}
           </button>
         </div>
 
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">加载中...</div> : null}
-        {!loading && items.length === 0 ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">班级暂无学生</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">动物们正在集合…</div> : null}
+        {!loading && items.length === 0 ? (
+          <div className="sticker sticker-quiet p-8 text-center text-ink-soft">班级暂无学生，先去「学生管理」添加吧。</div>
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((item) => (
-            <PetCard
-              key={item.student.id}
-              studentName={item.student.name}
-              badgeCount={item.badgeCount}
-              pet={item.pet}
-              onClick={() => setSelected(item)}
-            />
+          {items.map((item, index) => (
+            <div key={item.student.id} className={`rise-in stagger-${Math.min(index + 1, 8)}`}>
+              <PetCard
+                studentName={item.student.name}
+                badgeCount={item.badgeCount}
+                pet={item.pet}
+                onClick={() => setSelected(item)}
+              />
+            </div>
           ))}
         </div>
       </div>

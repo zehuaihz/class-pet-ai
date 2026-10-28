@@ -98,61 +98,61 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">系统设置</h1>
-            <p className="text-slate-600">自定义宠物成长阈值与全局系统名称。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">⚙️</span>系统设置</h1>
+            <p className="mt-1 text-sm text-ink-soft">自定义宠物成长阈值与全局系统名称。</p>
           </div>
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" disabled={saving} onClick={save}>
-            {saving ? "保存中..." : "保存设置"}
+          <button className="btn-tangerine disabled:opacity-40" disabled={saving} onClick={save}>
+            {saving ? "保存中..." : "💾 保存设置"}
           </button>
         </div>
 
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {saved ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">设置已保存</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {saved ? <div className="sticker sticker-quiet !border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">✅ 设置已保存</div> : null}
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="font-semibold">设置说明</h2>
-          <p className="mt-1 text-sm text-slate-500">设置页保留班级信息、成长阈值与系统名称配置。</p>
+        <section className="sticker sticker-quiet rise-in stagger-2 p-6">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📖</span>设置说明</h2>
+          <p className="mt-1 text-sm text-ink-soft">设置页保留班级信息、成长阈值与系统名称配置。</p>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
+        <section className="sticker sticker-quiet rise-in stagger-3 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold">班级信息</h2>
-              <p className="mt-1 text-sm text-slate-500">修改班级名称、年级与学校名称。</p>
+              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🏫</span>班级信息</h2>
+              <p className="mt-1 text-sm text-ink-soft">修改班级名称、年级与学校名称。</p>
             </div>
-            {classSaved ? <span className="text-sm text-green-600">已保存</span> : null}
+            {classSaved ? <span className="rounded-full border-2 border-forest bg-forest-mist px-2.5 py-0.5 text-xs font-bold text-forest-deep">已保存</span> : null}
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">班级名</span>
-              <input value={classroom.name} onChange={(event) => setClassroom({ ...classroom, name: event.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="如：三年级2班" />
+              <span className="text-xs font-bold text-ink-soft">班级名</span>
+              <input value={classroom.name} onChange={(event) => setClassroom({ ...classroom, name: event.target.value })} className="sticker-input mt-1 w-full" placeholder="如：三年级2班" />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">年级</span>
-              <input value={classroom.grade} onChange={(event) => setClassroom({ ...classroom, grade: event.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="如：3" />
+              <span className="text-xs font-bold text-ink-soft">年级</span>
+              <input value={classroom.grade} onChange={(event) => setClassroom({ ...classroom, grade: event.target.value })} className="sticker-input mt-1 w-full" placeholder="如：3" />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">学校名称</span>
-              <input value={classroom.schoolName} onChange={(event) => setClassroom({ ...classroom, schoolName: event.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="如：测试小学" />
+              <span className="text-xs font-bold text-ink-soft">学校名称</span>
+              <input value={classroom.schoolName} onChange={(event) => setClassroom({ ...classroom, schoolName: event.target.value })} className="sticker-input mt-1 w-full" placeholder="如：测试小学" />
             </label>
           </div>
-          <button className="mt-4 rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" disabled={classSaving || !classroom.name.trim()} onClick={saveClassInfo}>
+          <button className="btn-ink mt-4 disabled:opacity-40" disabled={classSaving || !classroom.name.trim()} onClick={saveClassInfo}>
             {classSaving ? "保存中..." : "保存班级信息"}
           </button>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
+        <section className="sticker sticker-quiet rise-in stagger-4 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold">成长阈值（累计食物，满级毕业）</h2>
-              <p className="mt-1 text-sm text-slate-500">宠物满级毕业自动获得徽章；等级数由阈值条目数决定。</p>
+              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🌱</span>成长阈值（累计食物，满级毕业）</h2>
+              <p className="mt-1 text-sm text-ink-soft">宠物满级毕业自动获得徽章；等级数由阈值条目数决定。</p>
             </div>
             <div className="flex gap-2">
               {(Object.keys(LEVEL_PRESETS) as Array<keyof typeof LEVEL_PRESETS>).map((name) => (
-                <button key={name} className="rounded-full border px-3 py-1 text-sm text-slate-600 hover:bg-slate-50" onClick={() => applyPreset(name)}>
+                <button key={name} className="rounded-full border-2 border-ink bg-white px-3 py-1 text-sm font-semibold text-ink transition hover:bg-butter" onClick={() => applyPreset(name)}>
                   {name}档
                 </button>
               ))}
@@ -160,25 +160,25 @@ export default function SettingsPage() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {config.map((item) => (
-              <label key={item.level} className="block rounded-lg border p-3">
-                <span className="text-xs font-medium text-slate-500">Lv.{item.level}</span>
+              <label key={item.level} className="block rounded-xl border-2 border-ink/15 bg-white p-3">
+                <span className="font-display text-sm font-bold text-ink">Lv.{item.level}</span>
                 <input
                   type="number"
                   min={0}
                   disabled={item.level === 1}
                   value={item.requiredGrowth}
                   onChange={(event) => updateThreshold(item.level, Number(event.target.value))}
-                  className="mt-1 w-full rounded-lg border px-2 py-1 text-sm disabled:bg-slate-50"
+                  className="sticker-input mt-1 w-full !px-2 !py-1 text-sm disabled:opacity-50"
                 />
               </label>
             ))}
           </div>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="font-semibold">全局系统名称</h2>
-          <p className="mt-1 text-sm text-slate-500">显示在首页与班级大屏的系统名称（默认：班级动物园）。</p>
-          <input value={systemName} onChange={(event) => setSystemName(event.target.value)} className="mt-3 w-full max-w-md rounded-lg border px-3 py-2" />
+        <section className="sticker sticker-quiet rise-in stagger-5 p-6">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🏷️</span>全局系统名称</h2>
+          <p className="mt-1 text-sm text-ink-soft">显示在首页与班级大屏的系统名称（默认：班级动物园）。</p>
+          <input value={systemName} onChange={(event) => setSystemName(event.target.value)} className="sticker-input mt-3 w-full max-w-md" />
         </section>
       </div>
     </AppShell>

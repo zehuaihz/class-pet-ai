@@ -40,7 +40,7 @@ export function LevelUpModal({ open, petName, newLevel, graduated, onClose }: Le
           100% { transform: scale(1); }
         }
       `}</style>
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white p-8 text-center shadow-2xl" style={{ animation: "zoo-bounce-in 0.45s ease-out" }}>
+      <div className="relative w-full max-w-sm overflow-hidden rounded-sticker-lg border-2 border-ink bg-butter-soft p-8 text-center shadow-sticker-lg" style={{ animation: "zoo-bounce-in 0.45s ease-out" }}>
         {STAR_POSITIONS.map((position, index) => (
           <span
             key={index}
@@ -50,12 +50,12 @@ export function LevelUpModal({ open, petName, newLevel, graduated, onClose }: Le
             ✨
           </span>
         ))}
-        <div className="text-6xl">{graduated ? "🎓" : "🎉"}</div>
-        <h2 className="mt-4 text-2xl font-bold text-slate-900">
+        <div className="text-6xl drop-shadow-sm">{graduated ? "🎓" : "🎉"}</div>
+        <h2 className="font-display mt-4 text-2xl font-bold text-ink">
           {graduated ? "养成毕业啦！" : "升级啦！"}
         </h2>
-        <p className="mt-2 text-slate-600">
-          {petName} 升到 <span className="font-bold text-green-600">Lv.{newLevel}</span>
+        <p className="mt-2 text-ink-soft">
+          {petName} 升到 <span className="sticker-dot !h-6 !w-auto bg-butter px-2 text-sm">Lv.{newLevel}</span>
           {graduated ? "，获得 1 枚专属徽章 🏅" : "，继续加油！"}
         </p>
       </div>

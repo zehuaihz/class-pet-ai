@@ -30,23 +30,23 @@ export default function NewClassroomPage() {
 
   return (
     <AppShell>
-      <section className="max-w-2xl rounded-xl bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold">创建班级</h1>
+      <section className="rise-in sticker mx-auto max-w-2xl p-6">
+        <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🌱</span>创建班级</h1>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
-            <span className="text-sm font-medium">班级名</span>
-            <input value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+            <span className="text-sm font-semibold text-ink-soft">班级名</span>
+            <input value={name} onChange={(event) => setName(event.target.value)} className="sticker-input mt-1 w-full" />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">年级</span>
-            <input value={grade} onChange={(event) => setGrade(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+            <span className="text-sm font-semibold text-ink-soft">年级</span>
+            <input value={grade} onChange={(event) => setGrade(event.target.value)} className="sticker-input mt-1 w-full" />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">学校</span>
-            <input value={schoolName} onChange={(event) => setSchoolName(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+            <span className="text-sm font-semibold text-ink-soft">学校</span>
+            <input value={schoolName} onChange={(event) => setSchoolName(event.target.value)} className="sticker-input mt-1 w-full" />
           </label>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white">保存</button>
+          {error ? <p className="text-sm font-semibold text-berry">{error}</p> : null}
+          <button className="btn-tangerine">💾 保存</button>
         </form>
       </section>
     </AppShell>

@@ -92,85 +92,87 @@ export default function StudentCheckinsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">我的打卡</h1>
-            <p className="text-slate-600">提交打卡任务并查看审批状态。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">📅</span>我的打卡</h1>
+            <p className="mt-1 text-sm text-ink-soft">提交打卡任务并查看审批状态。</p>
           </div>
-          {data ? <div className="text-slate-600">当前积分：{data.student.totalPoints}</div> : null}
+          {data ? (
+            <div className="sticker-dot !h-9 !w-auto bg-forest-mist px-3 text-sm">✨ 当前积分 <span className="font-display text-lg">{data.student.totalPoints}</span></div>
+          ) : null}
         </div>
 
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {notice ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">{notice}</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 shadow-sm">加载中...</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {notice ? <div className="sticker sticker-quiet !border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">{notice}</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
 
-        <section className="space-y-3 rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">进行中的任务</h2>
+        <section className="space-y-3 rise-in stagger-2">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🌱</span>进行中的任务</h2>
           {!loading && (data?.tasks.length ?? 0) === 0 ? (
-            <div className="rounded-lg border border-dashed p-4 text-slate-500">当前没有可打卡的任务</div>
+            <div className="sticker sticker-quiet p-8 text-center text-ink-soft">当前没有可打卡的任务</div>
           ) : null}
           {data?.tasks.map((task) => {
             const submitted = task.record !== null
             return (
-              <div key={task.id} className="rounded-lg border p-4">
+              <div key={task.id} className={`sticker sticker-quiet p-4 ${task.overdue && !submitted ? "opacity-70" : ""}`}>
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-semibold">{task.title}</div>
-                    {task.description ? <div className="text-sm text-slate-500">{task.description}</div> : null}
-                    <div className="mt-1 text-sm text-slate-500">
-                      奖励 +{task.rewardPoints} 分
-                      {task.requireEvidence ? " · 需要证据" : ""}
+                  <div className="min-w-0">
+                    <div className="font-display text-lg font-bold text-ink">{task.title}</div>
+                    {task.description ? <div className="text-sm text-ink-soft">{task.description}</div> : null}
+                    <div className="mt-1 text-sm text-ink-soft">
+                      <span className="font-display font-bold text-forest">+{task.rewardPoints} 分</span>
+                      {task.requireEvidence ? " · 📎 需要证据" : ""}
                       {task.deadlineAt ? ` · 截止 ${String(task.deadlineAt).slice(0, 10)}` : ""}
                     </div>
                   </div>
-                  <span className={`shrink-0 rounded-lg px-3 py-1 text-sm ${submitted ? "bg-slate-100 text-slate-600" : "bg-green-50 text-green-700"}`}>
+                  <span className={`shrink-0 rounded-full border-2 px-3 py-1 text-sm font-semibold ${submitted ? "border-ink/20 bg-paper-deep text-ink-soft" : "border-ink bg-butter text-ink shadow-sticker-sm"}`}>
                     {submitted ? STATUS_LABELS[task.record?.status ?? ""] ?? task.record?.status : "可打卡"}
                   </span>
                 </div>
 
                 {!submitted ? (
                   <div className="mt-3 flex flex-wrap items-end gap-3">
-                    <label className="flex-1">
-                      <span className="text-sm text-slate-600">证据链接{task.requireEvidence ? "" : "（可选）"}</span>
+                    <label className="min-w-48 flex-1">
+                      <span className="text-sm font-semibold text-ink-soft">证据链接{task.requireEvidence ? "" : "（可选）"}</span>
                       <input
                         type="url"
                         value={evidence[task.id] ?? ""}
                         onChange={(event) => setEvidence((current) => ({ ...current, [task.id]: event.target.value }))}
                         placeholder="https://..."
-                        className="mt-1 w-full rounded-lg border px-3 py-2"
+                        className="sticker-input mt-1 w-full"
                       />
                     </label>
                     <button
-                      className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50"
+                      className="btn-tangerine disabled:opacity-40"
                       disabled={submittingId === task.id || task.overdue}
                       onClick={() => submit(task)}
                     >
-                      {submittingId === task.id ? "提交中..." : "打卡"}
+                      {submittingId === task.id ? "提交中..." : "✅ 打卡"}
                     </button>
                   </div>
                 ) : null}
-                {!submitted && task.overdue ? <div className="mt-2 text-sm text-amber-700">任务已过截止时间，无法打卡</div> : null}
+                {!submitted && task.overdue ? <div className="mt-2 text-sm font-semibold text-tangerine">⏰ 任务已过截止时间，无法打卡</div> : null}
               </div>
             )
           })}
         </section>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">打卡记录</h2>
+        <section className="sticker sticker-quiet rise-in stagger-3 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📖</span>打卡记录</h2>
           {(data?.records.length ?? 0) === 0 ? (
-            <div className="mt-3 rounded-lg border border-dashed p-4 text-slate-500">暂无打卡记录</div>
+            <div className="mt-3 rounded-xl border-2 border-dashed border-ink/30 p-4 text-center text-sm text-ink-faint">暂无打卡记录</div>
           ) : (
             <div className="mt-3 space-y-2">
               {data?.records.map((record) => (
-                <div key={record.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <div className="font-medium">{record.taskTitle}</div>
-                    <div className="text-sm text-slate-500">{record.submittedAt ? String(record.submittedAt).slice(0, 10) : "-"}</div>
+                <div key={record.id} className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink">{record.taskTitle}</div>
+                    <div className="text-sm text-ink-faint">{record.submittedAt ? String(record.submittedAt).slice(0, 10) : "-"}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-slate-600">{STATUS_LABELS[record.status] ?? record.status}</div>
-                    <div className="text-sm text-green-600">+{record.rewardPoints}</div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm text-ink-soft">{STATUS_LABELS[record.status] ?? record.status}</div>
+                    <div className="font-display font-bold text-forest">+{record.rewardPoints}</div>
                   </div>
                 </div>
               ))}

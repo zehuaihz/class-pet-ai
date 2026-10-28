@@ -13,13 +13,13 @@ const baseNav = [
 
 // 班级子模块：动物园/荣誉墙/小卖部来自 zoo 体系；打卡任务与 AI 工作台为 ai_generate 独有模块。
 const classroomNav = [
-  { key: "zoo", label: "动物园", href: (id: string) => `/classrooms/${id}/zoo` },
-  { key: "students", label: "学生管理", href: (id: string) => `/classrooms/${id}/students` },
-  { key: "points", label: "积分管理", href: (id: string) => `/classrooms/${id}/points` },
-  { key: "checkins", label: "打卡任务", href: (id: string) => `/classrooms/${id}/checkins` },
-  { key: "honor", label: "荣誉墙", href: (id: string) => `/classrooms/${id}/badges` },
-  { key: "rewards", label: "小卖部", href: (id: string) => `/classrooms/${id}/rewards` },
-  { key: "ai", label: "AI 工作台", href: (id: string) => `/classrooms/${id}/ai` },
+  { key: "zoo", label: "动物园", href: (id: string) => `/classrooms/${id}/zoo`, icon: "🐾" },
+  { key: "students", label: "学生管理", href: (id: string) => `/classrooms/${id}/students`, icon: "🧒" },
+  { key: "points", label: "积分管理", href: (id: string) => `/classrooms/${id}/points`, icon: "✨" },
+  { key: "checkins", label: "打卡任务", href: (id: string) => `/classrooms/${id}/checkins`, icon: "📅" },
+  { key: "honor", label: "荣誉墙", href: (id: string) => `/classrooms/${id}/badges`, icon: "🏅" },
+  { key: "rewards", label: "小卖部", href: (id: string) => `/classrooms/${id}/rewards`, icon: "🛍️" },
+  { key: "ai", label: "AI 工作台", href: (id: string) => `/classrooms/${id}/ai`, icon: "🤖" },
 ]
 
 // 设置下挂管理类二级菜单。
@@ -28,7 +28,7 @@ const settingsSubNav = [
   { key: "screen", label: "班级大屏", href: (id: string) => `/classrooms/${id}/screen` },
 ]
 
-type NavItem = { href: string; label: string; children?: NavItem[] }
+type NavItem = { href: string; label: string; icon?: string; children?: NavItem[] }
 type UserRole = "teacher" | "student" | "parent" | "admin"
 
 // 精确匹配的顶级路由，避免子路由（如 /student/rewards）连带高亮父级。
@@ -37,8 +37,8 @@ const EXACT_ROUTES = new Set(["/dashboard", "/classrooms", "/student", "/parent"
 function NavLinkList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
-    <div className="space-y-1">
-      {items.map((item) => {
+    <div className="space-y-1.5">
+      {items.map((item, index) => {
         const childActive = item.children?.some((child) => (EXACT_ROUTES.has(child.href) ? pathname === child.href : pathname.startsWith(child.href))) ?? false
         const active = EXACT_ROUTES.has(item.href) ? pathname === item.href : pathname.startsWith(item.href) || childActive
         return (
@@ -47,12 +47,17 @@ function NavLinkList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
               href={item.href}
               onClick={onNavigate}
               aria-current={pathname === item.href ? "page" : undefined}
-              className={`block rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-100 ${active ? "bg-green-50 font-medium text-green-700" : ""}`}
+              className={`flex items-center gap-2 rounded-xl px-3 py-2 transition ${
+                active
+                  ? `border-2 border-ink bg-butter font-semibold text-ink shadow-sticker-sm ${index % 2 === 0 ? "tag-tilt-a" : "tag-tilt-b"}`
+                  : "border-2 border-transparent font-medium text-ink-soft hover:border-ink hover:bg-paper-deep hover:text-ink"
+              }`}
             >
-              {item.label}
+              {item.icon ? <span aria-hidden="true" className="text-base leading-none">{item.icon}</span> : null}
+              <span>{item.label}</span>
             </Link>
             {item.children && active ? (
-              <nav aria-label={`${item.label}二级菜单`} className="mt-1 space-y-1 pl-4">
+              <nav aria-label={`${item.label}二级菜单`} className="mt-1 space-y-1 border-l-2 border-dashed border-ink/30 pl-4">
                 {item.children.map((child) => {
                   const childActive = EXACT_ROUTES.has(child.href) ? pathname === child.href : pathname.startsWith(child.href)
                   return (
@@ -61,7 +66,11 @@ function NavLinkList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
                       href={child.href}
                       onClick={onNavigate}
                       aria-current={childActive ? "page" : undefined}
-                      className={`block rounded-lg px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100 ${childActive ? "bg-green-50 font-medium text-green-700" : ""}`}
+                      className={`block rounded-lg px-3 py-1.5 text-sm transition ${
+                        childActive
+                          ? "border-2 border-ink bg-butter font-semibold text-ink shadow-sticker-sm"
+                          : "font-medium text-ink-soft hover:bg-paper-deep hover:text-ink"
+                      }`}
                     >
                       {child.label}
                     </Link>
@@ -116,7 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const currentClassroomId = useMemo(() => {
     const match = pathname.match(/\/classrooms\/([^/]+)/)
-    if (match?.[1]) return match[1]
+    if (match?.[1]) return match?.[1]
     // On non-scoped routes (e.g. /dashboard) surface the persisted last class
     // so the switcher reflects the class the teacher is actually working with.
     return resolveLastClassroomId(classrooms)
@@ -130,23 +139,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navItems = useMemo<NavItem[]>(() => {
     if (role === "student") {
       return [
-        { href: "/student", label: "我的信息" },
-        { href: "/student/checkins", label: "我的打卡" },
-        { href: "/student/rewards", label: "小卖部" },
+        { href: "/student", label: "我的信息", icon: "🎒" },
+        { href: "/student/checkins", label: "我的打卡", icon: "📅" },
+        { href: "/student/rewards", label: "小卖部", icon: "🛍️" },
       ]
     }
-    if (role === "parent") return [{ href: "/parent", label: "家长端" }]
-    if (!currentClassroomId) return role === "admin" ? [{ href: "/admin", label: "管理后台" }, ...baseNav] : baseNav
+    if (role === "parent") return [{ href: "/parent", label: "家长端", icon: "🏡" }]
+    if (!currentClassroomId) return role === "admin" ? [{ href: "/admin", label: "管理后台", icon: "🛠️" }, ...baseNav] : baseNav
 
     const settingsChildren = [
       ...settingsSubNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label })),
       ...(role === "admin" ? [{ href: "/admin", label: "管理后台" }] : []),
     ]
-    const settingsItem = { href: `/classrooms/${currentClassroomId}/settings`, label: "设置", children: settingsChildren }
+    const settingsItem = { href: `/classrooms/${currentClassroomId}/settings`, label: "设置", icon: "⚙️", children: settingsChildren }
 
     return [
       ...baseNav,
-      ...classroomNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label })),
+      ...classroomNav.map((item) => ({ href: item.href(currentClassroomId), label: item.label, icon: item.icon })),
       settingsItem,
     ]
   }, [role, currentClassroomId])
@@ -180,10 +189,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const canManageClass = role === "teacher" || role === "admin"
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white px-4 py-3 sm:px-6 sm:py-4">
+    <div className="min-h-screen">
+      <header className="border-b-2 border-ink bg-paper-deep px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               ref={toggleRef}
               type="button"
@@ -191,23 +200,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label="打开导航菜单"
               aria-expanded={mobileNavOpen}
               aria-controls="mobile-nav"
-              className="shrink-0 rounded-lg border px-2.5 py-2 lg:hidden"
+              className="sticker-tight shrink-0 bg-white px-2.5 py-1.5 text-base font-bold transition hover:bg-butter active:translate-x-0.5 active:translate-y-0.5 active:shadow-none lg:hidden"
               onClick={() => setMobileNavOpen(true)}
             >
               ☰
             </button>
-            <Link href="/dashboard" className="truncate text-lg font-bold text-slate-900 sm:text-xl">
-              {systemName} 🐾
+            <Link href="/dashboard" className="font-display group flex truncate items-center gap-2 text-xl font-bold text-ink sm:text-2xl">
+              <span aria-hidden="true" className="inline-block transition-transform group-hover:-rotate-12">🐾</span>
+              <span className="truncate">{systemName}</span>
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {canManageClass && <ClassSwitcher classrooms={classrooms} currentClassroomId={currentClassroomId} />}
-            <button className="hidden rounded-lg border px-3 py-2 text-sm lg:block" onClick={handleLogout}>退出登录</button>
+            <button className="btn-outline hidden !px-3 !py-1.5 text-sm lg:inline-flex" onClick={handleLogout}>退出登录</button>
           </div>
         </div>
       </header>
       <div className="flex">
-        <nav className="hidden min-h-[calc(100vh-65px)] w-52 border-r bg-white p-4 lg:block lg:w-56" aria-label="主导航">
+        <nav className="hidden min-h-[calc(100vh-69px)] w-56 border-r-2 border-ink bg-paper-deep/60 p-4 lg:block" aria-label="主导航">
           <NavLinkList items={navItems} />
         </nav>
 
@@ -225,20 +235,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div
             aria-hidden="true"
             onClick={() => setMobileNavOpen(false)}
-            className={`absolute inset-0 bg-black/40 transition-opacity ${mobileNavOpen ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 bg-ink/40 transition-opacity ${mobileNavOpen ? "opacity-100" : "opacity-0"}`}
           />
           <nav
             aria-label="移动端导航"
-            className={`absolute left-0 top-0 flex h-full w-64 max-w-[80vw] flex-col overflow-y-auto bg-white p-4 shadow-xl transition-transform ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}
+            className={`absolute left-0 top-0 flex h-full w-72 max-w-[80vw] flex-col overflow-y-auto border-r-2 border-ink bg-paper p-4 shadow-sticker-lg transition-transform ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}
           >
+            <Link href="/dashboard" className="font-display mb-4 flex items-center gap-2 text-xl font-bold text-ink">
+              <span aria-hidden="true">🐾</span>
+              <span>{systemName}</span>
+            </Link>
             <NavLinkList items={navItems} onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-6 border-t pt-4">
-              <button className="w-full rounded-lg border px-3 py-2 text-left text-sm" onClick={handleLogout}>退出登录</button>
+            <div className="mt-6 border-t-2 border-dashed border-ink/30 pt-4">
+              <button className="btn-outline w-full" onClick={handleLogout}>退出登录</button>
             </div>
           </nav>
         </div>
 
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   )

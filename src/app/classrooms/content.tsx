@@ -28,23 +28,31 @@ export default function ClassroomsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">班级</h1>
-            <p className="text-slate-600">创建班级后导入学生，开始积分和打卡。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🏫</span>我的班级</h1>
+            <p className="mt-1 text-sm text-ink-soft">创建班级后导入学生，开始积分和打卡。</p>
           </div>
-          <Link href="/classrooms/new" className="rounded-lg bg-green-600 px-4 py-2 text-white">创建班级</Link>
+          <Link href="/classrooms/new" className="btn-tangerine">🌱 创建班级</Link>
         </div>
-        {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div> : null}
-        {loading ? <div className="rounded-xl bg-white p-6 text-slate-600 shadow-sm">加载中...</div> : null}
-        {!loading && !error && classrooms.length === 0 ? <div className="rounded-xl bg-white p-6 text-slate-600 shadow-sm">暂无班级。先创建一个试点班级。</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-4 font-semibold text-berry">{error}</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
+        {!loading && !error && classrooms.length === 0 ? (
+          <div className="sticker sticker-quiet p-10 text-center text-ink-soft">暂无班级。先创建一个试点班级，动物园等着大家！🐾</div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {classrooms.map((classroom) => (
-            <Link key={classroom.id} href={`/classrooms/${classroom.id}/students`} className="rounded-xl bg-white p-5 shadow-sm transition hover:ring-2 hover:ring-green-200">
-              <div className="text-lg font-semibold">{classroom.name}</div>
-              <div className="mt-2 text-sm text-slate-500">{classroom.grade ?? "未设置年级"} · {classroom.schoolName ?? "未设置学校"}</div>
-              <div className="mt-4 flex justify-between text-sm"><span>{classroom.studentCount} 名学生</span><span>宠物 ×{classroom.petCount}</span></div>
+          {classrooms.map((classroom, index) => (
+            <Link key={classroom.id} href={`/classrooms/${classroom.id}/students`} className={`sticker sticker-hover rise-in stagger-${Math.min(index + 1, 6)} block p-5`}>
+              <div className="font-display flex items-center gap-2 text-xl font-bold text-ink">
+                <span aria-hidden="true">🏫</span>
+                <span className="truncate">{classroom.name}</span>
+              </div>
+              <div className="mt-2 text-sm text-ink-soft">{classroom.grade ?? "未设置年级"} · {classroom.schoolName ?? "未设置学校"}</div>
+              <div className="mt-4 flex items-center justify-between text-sm font-semibold">
+                <span className="rounded-full border-2 border-ink/15 bg-paper-deep px-2.5 py-0.5 text-ink-soft">🧒 {classroom.studentCount} 名学生</span>
+                <span className="rounded-full border-2 border-ink bg-butter px-2.5 py-0.5 text-ink shadow-sticker-sm">🐾 宠物 ×{classroom.petCount}</span>
+              </div>
             </Link>
           ))}
         </div>

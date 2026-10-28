@@ -18,6 +18,13 @@ type DashboardPayload = {
   recentTransactions: Array<{ id: string; reason: string; delta: number }>
 }
 
+const stats = [
+  { key: "checkinRate", label: "今日打卡率", icon: "📅", accent: "bg-sky-soft", text: "text-sky" },
+  { key: "pointCount", label: "今日加分", icon: "✨", accent: "bg-tangerine-soft", text: "text-tangerine" },
+  { key: "missedCount", label: "待补卡", icon: "📮", accent: "bg-berry-soft", text: "text-berry" },
+  { key: "petLevel", label: "宠物等级", icon: "🐾", accent: "bg-forest-mist", text: "text-forest" },
+] as const
+
 export default function DashboardPage() {
   const [classrooms, setClassrooms] = useState<ClassroomOption[]>([])
   const [selectedClassroomId, setSelectedClassroomId] = useState<string | null>(null)
@@ -76,46 +83,76 @@ export default function DashboardPage() {
     return () => window.removeEventListener(CLASSROOM_CHANGE_EVENT, handleClassroomChange)
   }, [classrooms, loadDashboard])
 
+  const statValues: Record<string, string> = {
+    checkinRate: dashboard ? `${Math.round(dashboard.today.checkinRate * 100)}%` : "--",
+    pointCount: dashboard ? `${dashboard.today.pointCount}` : "--",
+    missedCount: dashboard ? `${dashboard.today.missedCount}` : "--",
+    petLevel: dashboard ? `Lv.${dashboard.pet.level}` : "--",
+  }
+
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">教师 Dashboard</h1>
-          <p className="mt-1 text-slate-600">今日班级状态、快捷加分、打卡和宠物成长入口。</p>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="rise-in">
+          <h1 className="font-display text-3xl font-bold text-ink">教师手册</h1>
+          <p className="mt-1 text-sm text-ink-soft">今日班级状态、快捷加分、打卡和宠物成长入口。</p>
         </div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 shadow-sm">加载中...</div> : null}
-        <section className="grid gap-4 md:grid-cols-4">
-          {[
-            ["打卡率", dashboard ? `${Math.round(dashboard.today.checkinRate * 100)}%` : "--"],
-            ["今日加分", dashboard ? `${dashboard.today.pointCount}` : "--"],
-            ["待补卡", dashboard ? `${dashboard.today.missedCount}` : "--"],
-            ["宠物等级", dashboard ? `Lv.${dashboard.pet.level}` : "--"],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-white p-5 shadow-sm">
-              <div className="text-sm text-slate-500">{label}</div>
-              <div className="mt-2 text-3xl font-bold text-slate-900">{value}</div>
+
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+
+        {loading ? (
+          <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">翻开手册中…</div>
+        ) : null}
+
+        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map((stat, index) => (
+            <div key={stat.key} className={`sticker sticker-hover rise-in stagger-${index + 1} p-4 sm:p-5`}>
+              <div className="flex items-center gap-2">
+                <span className={`sticker-dot ${stat.accent} !h-8 !w-8 text-base`} aria-hidden="true">{stat.icon}</span>
+                <span className="text-xs font-semibold tracking-wide text-ink-soft sm:text-sm">{stat.label}</span>
+              </div>
+              <div className={`font-display mt-3 text-3xl font-bold sm:text-4xl ${stat.text}`}>{statValues[stat.key]}</div>
             </div>
           ))}
         </section>
+
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl bg-white p-5 shadow-sm">
-            <h2 className="font-semibold">快捷操作</h2>
+          <div className="sticker sticker-quiet rise-in stagger-5 p-5">
+            <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink">
+              <span aria-hidden="true">🔖</span>快捷操作
+            </h2>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link href="/classrooms/new" className="rounded-lg bg-green-600 px-4 py-2 text-white">创建班级</Link>
-              <Link href="/classrooms" className="rounded-lg border px-4 py-2">班级列表</Link>
-              {selectedClassroomId ? <>
-                <Link href={`/classrooms/${selectedClassroomId}/students`} className="rounded-lg border px-4 py-2">学生管理</Link>
-                <Link href={`/classrooms/${selectedClassroomId}/points`} className="rounded-lg border px-4 py-2">积分管理</Link>
-              </> : <span className="rounded-lg border border-dashed px-4 py-2 text-slate-500">请先创建班级</span>}
+              <Link href="/classrooms/new" className="btn-tangerine">🌱 创建班级</Link>
+              <Link href="/classrooms" className="btn-outline">🏫 班级列表</Link>
+              {selectedClassroomId ? (
+                <>
+                  <Link href={`/classrooms/${selectedClassroomId}/students`} className="btn-outline">🧒 学生管理</Link>
+                  <Link href={`/classrooms/${selectedClassroomId}/points`} className="btn-outline">✨ 积分管理</Link>
+                  <Link href={`/classrooms/${selectedClassroomId}/zoo`} className="btn-outline">🐾 动物园</Link>
+                </>
+              ) : (
+                <span className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-2 text-sm text-ink-faint">请先创建班级</span>
+              )}
             </div>
           </div>
-          <div className="rounded-xl bg-white p-5 shadow-sm">
-            <h2 className="font-semibold">最近动态</h2>
-            <div className="mt-4 space-y-3">
-              {(dashboard?.recentTransactions ?? []).map((action) => (
-                <div key={action.id} className="rounded-lg border px-3 py-2 text-slate-700">{action.reason} · +{action.delta}</div>
-              ))}
+
+          <div className="sticker sticker-quiet rise-in stagger-6 p-5">
+            <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink">
+              <span aria-hidden="true">📜</span>最近动态
+            </h2>
+            <div className="mt-4 space-y-2.5">
+              {(dashboard?.recentTransactions ?? []).length === 0 ? (
+                <p className="rounded-xl border-2 border-dashed border-ink/30 px-4 py-6 text-center text-sm text-ink-faint">今天还没有新的积分记录</p>
+              ) : (
+                (dashboard?.recentTransactions ?? []).map((action) => (
+                  <div key={action.id} className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-paper px-3 py-2 text-sm text-ink">
+                    <span className="truncate">{action.reason}</span>
+                    <span className={`font-display shrink-0 text-base font-bold ${action.delta >= 0 ? "text-forest" : "text-berry"}`}>
+                      {action.delta >= 0 ? `+${action.delta}` : action.delta}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>

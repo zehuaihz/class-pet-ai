@@ -40,49 +40,51 @@ export default function LeaderboardPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">荣誉墙</h1>
-            <p className="text-slate-600">按持有徽章数量排序，徽章来自宠物满级毕业。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🏆</span>光荣榜</h1>
+            <p className="mt-1 text-sm text-ink-soft">按持有徽章数量排序，徽章来自宠物满级毕业。</p>
           </div>
           <HonorTabs />
         </div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">加载中...</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
 
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+        <div className="sticker sticker-quiet overflow-hidden rise-in stagger-2">
           {rows.map((row, index) => (
-            <div key={row.student.id} className={`flex items-center gap-4 px-5 py-3 ${index > 0 ? "border-t" : ""} ${index < 3 ? "bg-amber-50/60" : ""}`}>
-              <div className="w-10 text-center text-xl">{MEDALS[index] ?? `${index + 1}`}</div>
+            <div key={row.student.id} className={`flex items-center gap-4 px-5 py-3.5 ${index > 0 ? "border-t-2 border-dashed border-ink/20" : ""} ${index === 0 ? "bg-butter-soft" : index < 3 ? "bg-butter-soft/50" : ""}`}>
+              <div className="sticker-dot w-10 shrink-0 !h-8 !w-8 text-sm" aria-hidden="true">
+                <span className={index >= 3 ? "font-display" : ""}>{MEDALS[index] ?? index + 1}</span>
+              </div>
               {row.pet ? (
-                <div className="flex w-16 items-center justify-center">
+                <div className="flex w-14 shrink-0 items-center justify-center">
                   <PetVisual speciesKey={row.pet.speciesKey} level={row.pet.level} size="text-3xl" />
                 </div>
               ) : (
-                <div className="flex w-16 items-center justify-center text-3xl">🐾</div>
+                <div className="flex w-14 shrink-0 items-center justify-center text-3xl opacity-40">🐾</div>
               )}
               <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">{row.student.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="font-display truncate text-lg font-bold text-ink">{row.student.name}</div>
+                <div className="truncate text-xs text-ink-soft">
                   {row.pet ? `${row.pet.speciesName} · Lv.${row.pet.level} · 累计食物 ${row.pet.growthValue}` : "未分配宠物"}
                 </div>
               </div>
               {row.pet ? (
-                <div className="hidden w-32 sm:block">
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-green-500" style={{ width: `${Math.round(row.pet.progressRatio * 100)}%` }} />
+                <div className="hidden w-32 shrink-0 sm:block">
+                  <div className="h-2.5 overflow-hidden rounded-full border-2 border-ink bg-white">
+                    <div className="h-full rounded-full bg-forest" style={{ width: `${Math.round(row.pet.progressRatio * 100)}%` }} />
                   </div>
                 </div>
               ) : null}
-              <div className="w-20 text-right">
-                <div className="text-2xl font-bold text-amber-500">{row.badgeCount}</div>
-                <div className="text-[10px] text-slate-400">徽章</div>
+              <div className="w-16 shrink-0 text-right">
+                <div className="font-display text-2xl font-bold text-tangerine">{row.badgeCount}</div>
+                <div className="text-[10px] font-bold text-ink-faint">徽章</div>
               </div>
             </div>
           ))}
         </div>
-        {!loading && rows.length === 0 ? <div className="rounded-lg bg-white p-5 text-slate-500 shadow-sm">暂无学生</div> : null}
+        {!loading && rows.length === 0 ? <div className="sticker sticker-quiet p-8 text-center text-ink-soft">暂无学生</div> : null}
       </div>
     </AppShell>
   )

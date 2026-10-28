@@ -77,31 +77,31 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={() => onOpenChange(false)}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onMouseDown={() => onOpenChange(false)}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-add-title"
         tabIndex={-1}
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl outline-none"
+        className="animate-pop-in w-full max-w-md rounded-sticker-lg border-2 border-ink bg-paper p-6 shadow-sticker-lg outline-none"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <h2 id="quick-add-title" className="text-xl font-bold">给 {student.name} 加分</h2>
+        <h2 id="quick-add-title" className="font-display text-xl font-bold text-ink">✨ 给 {student.name} 加分</h2>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="text-sm font-medium">分值</label>
+            <label className="text-sm font-semibold text-ink">分值</label>
             <div className="mt-1 flex items-center gap-2">
-              <button type="button" className="rounded-lg border px-3 py-2" onClick={() => setDelta((value) => Math.max(1, value - 1))}>-</button>
-              <span className="w-10 text-center text-lg font-semibold">{delta}</span>
-              <button type="button" className="rounded-lg border px-3 py-2" onClick={() => setDelta((value) => value + 1)}>+</button>
+              <button type="button" className="btn-outline !px-3 !py-1.5" onClick={() => setDelta((value) => Math.max(1, value - 1))}>−</button>
+              <span className="font-display w-10 text-center text-xl font-bold text-forest">{delta}</span>
+              <button type="button" className="btn-outline !px-3 !py-1.5" onClick={() => setDelta((value) => value + 1)}>＋</button>
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">常用原因</label>
+            <label className="text-sm font-semibold text-ink">常用原因</label>
             <div className="mt-2 flex flex-wrap gap-2">
               {defaultRules.map((rule) => (
-                <button key={rule.id} type="button" className="rounded-full border px-3 py-1 text-sm" onClick={() => {
+                <button key={rule.id} type="button" className="rounded-full border-2 border-ink bg-white px-3 py-1 text-sm font-medium text-ink transition hover:bg-butter" onClick={() => {
                   setReason(rule.name)
                   setDelta(rule.pointDelta)
                   setRuleId(rule.id)
@@ -110,13 +110,13 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
             </div>
           </div>
           <label className="block">
-            <span className="text-sm font-medium">自定义原因</span>
-            <textarea value={reason} onChange={(event) => { setReason(event.target.value); setRuleId(undefined) }} className="mt-1 w-full rounded-lg border px-3 py-2" rows={3} />
+            <span className="text-sm font-semibold text-ink">自定义原因</span>
+            <textarea value={reason} onChange={(event) => { setReason(event.target.value); setRuleId(undefined) }} className="sticker-input mt-1 w-full" rows={3} />
           </label>
         </div>
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="rounded-lg border px-4 py-2" onClick={() => onOpenChange(false)}>取消</button>
-          <button type="button" disabled={submitting || !reason.trim()} className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" onClick={handleSubmit}>
+          <button type="button" className="btn-outline" onClick={() => onOpenChange(false)}>取消</button>
+          <button type="button" disabled={submitting || !reason.trim()} className="btn-tangerine disabled:opacity-40" onClick={handleSubmit}>
             {submitting ? "提交中..." : "确认加分"}
           </button>
         </div>

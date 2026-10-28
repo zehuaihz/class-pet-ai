@@ -60,40 +60,40 @@ export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit,
     <form className="space-y-3" onSubmit={handleSubmit}>
       <div className="grid gap-3 md:grid-cols-4">
         <label className="text-sm md:col-span-2">
-          <span className="text-slate-600">名称</span>
+          <span className="font-semibold text-ink-soft">名称</span>
           <input
-            className="mt-1 w-full rounded-lg border px-3 py-2"
+            className="sticker-input mt-1 w-full"
             value={values.name}
             onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))}
             required
           />
         </label>
         <label className="text-sm">
-          <span className="text-slate-600">所需徽章</span>
+          <span className="font-semibold text-ink-soft">所需徽章</span>
           <input
             type="number"
             min={1}
-            className="mt-1 w-full rounded-lg border px-3 py-2"
+            className="sticker-input mt-1 w-full"
             value={values.costBadges}
             onChange={(event) => setValues((current) => ({ ...current, costBadges: Number(event.target.value) }))}
             required
           />
         </label>
         <label className="text-sm">
-          <span className="text-slate-600">库存（留空为无限）</span>
+          <span className="font-semibold text-ink-soft">库存（留空为无限）</span>
           <input
             type="number"
             min={0}
-            className="mt-1 w-full rounded-lg border px-3 py-2"
+            className="sticker-input mt-1 w-full"
             value={values.stock}
             onChange={(event) => setValues((current) => ({ ...current, stock: event.target.value }))}
           />
         </label>
       </div>
       <label className="block text-sm">
-        <span className="text-slate-600">描述</span>
+        <span className="font-semibold text-ink-soft">描述</span>
         <input
-          className="mt-1 w-full rounded-lg border px-3 py-2"
+          className="sticker-input mt-1 w-full"
           value={values.description}
           onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
         />
@@ -101,20 +101,21 @@ export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit,
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
+          className="h-4 w-4 accent-[#2F7D4F]"
           checked={values.enabled}
           onChange={(event) => setValues((current) => ({ ...current, enabled: event.target.checked }))}
         />
-        <span className="text-slate-600">上架（学生可见）</span>
+        <span className="font-semibold text-ink-soft">上架（学生可见）</span>
       </label>
 
-      {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="sticker-tight !border-berry bg-berry-soft p-2 text-sm font-semibold text-berry">{error}</div> : null}
 
       <div className="flex gap-2">
-        <button className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" disabled={disabled}>
+        <button className="btn-tangerine disabled:opacity-40" disabled={disabled}>
           {submitLabel}
         </button>
         {onCancel ? (
-          <button type="button" className="rounded-lg border px-4 py-2" onClick={onCancel}>
+          <button type="button" className="btn-outline" onClick={onCancel}>
             取消
           </button>
         ) : null}

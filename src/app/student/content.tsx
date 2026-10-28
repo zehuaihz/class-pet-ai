@@ -27,20 +27,27 @@ export default function StudentPage() {
 
   return (
     <AppShell>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">我的信息</h1>
+      <div className="mx-auto max-w-3xl space-y-5">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🎒</span>我的信息</h1>
           <div className="flex gap-2">
-            <Link href="/student/checkins" className="rounded-lg border px-3 py-2">我的打卡</Link>
-            <Link href="/student/rewards" className="rounded-lg border px-3 py-2">奖励兑换</Link>
+            <Link href="/student/checkins" className="btn-outline !px-3 !py-1.5 text-sm">📅 我的打卡</Link>
+            <Link href="/student/rewards" className="btn-outline !px-3 !py-1.5 text-sm">🛍️ 奖励兑换</Link>
           </div>
         </div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
         {summary ? (
-          <div className="rounded-xl bg-white p-6 shadow-sm">
-            <div className="text-lg font-semibold">{summary.name}</div>
-            <div className="mt-2 text-slate-500">{summary.classroom.name} · {summary.group ?? "未分组"} · {summary.totalPoints} 分</div>
-            {summary.pet ? <div className="mt-2 text-slate-500">我的宠物：{summary.pet.name} Lv.{summary.pet.level}</div> : null}
+          <div className="sticker sticker-quiet rise-in stagger-2 p-6">
+            <div className="font-display text-2xl font-bold text-ink">{summary.name}</div>
+            <div className="mt-2 text-ink-soft">
+              {summary.classroom.name} · {summary.group ?? "未分组"} · <span className="font-display text-lg font-bold text-forest">{summary.totalPoints} 分</span>
+            </div>
+            {summary.pet ? (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border-2 border-ink bg-forest-mist px-4 py-1.5 shadow-sticker-sm">
+                <span aria-hidden="true" className="text-xl">🐾</span>
+                <span className="font-semibold text-ink">我的宠物：{summary.pet.name} <span className="font-display font-bold text-forest">Lv.{summary.pet.level}</span></span>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

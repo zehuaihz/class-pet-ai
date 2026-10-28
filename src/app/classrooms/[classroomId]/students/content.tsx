@@ -130,21 +130,75 @@ export default function StudentsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold">学生管理</h1><p className="text-slate-600">导入学生、查看积分、执行快捷加分。</p></div>
-          <div className="flex gap-2"><button className="rounded-lg border px-4 py-2" onClick={() => setShowImport(true)}>导入学生</button><button className="rounded-lg bg-green-600 px-4 py-2 text-white" onClick={openCreate}>添加学生</button></div>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🧒</span>学生管理</h1>
+            <p className="mt-1 text-sm text-ink-soft">导入学生、查看积分、执行快捷加分。</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-outline" onClick={() => setShowImport(true)}>📥 导入学生</button>
+            <button className="btn-tangerine" onClick={openCreate}>＋ 添加学生</button>
+          </div>
         </div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        <div className="rounded-xl bg-white p-4 shadow-sm">
-          <div className="mb-4 flex gap-3"><label className="sr-only" htmlFor="student-search">搜索学生</label><input id="student-search" value={keyword} onChange={(event) => setKeyword(event.target.value)} className="rounded-lg border px-3 py-2" placeholder="搜索学生" /><label className="sr-only" htmlFor="group-filter">分组筛选</label><select id="group-filter" value={groupId} onChange={(event) => setGroupId(event.target.value)} className="rounded-lg border px-3 py-2"><option value="all">全部分组</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></div>
-          {loading ? <div className="p-4 text-slate-500">加载中...</div> : null}
-          {!loading && students.length === 0 ? <div className="p-4 text-slate-500">暂无学生</div> : null}
-          <div className="grid gap-4 md:grid-cols-3">{students.map((student) => <article key={student.id} className="rounded-xl border p-4"><div className="text-lg font-semibold">{student.name}</div><div className="mt-1 text-slate-500">{student.totalPoints}分 · {student.group?.name ?? "未分组"}</div><div className="mt-3 flex gap-2"><button className="rounded-lg border px-3 py-1" onClick={() => openEdit(student)}>编辑</button><button className="rounded-lg border px-3 py-1 text-red-600" onClick={() => removeStudent(student.id)}>删除</button></div></article>)}</div>
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        <div className="sticker sticker-quiet rise-in stagger-2 p-5">
+          <div className="mb-4 flex flex-wrap gap-3">
+            <label className="sr-only" htmlFor="student-search">搜索学生</label>
+            <input id="student-search" value={keyword} onChange={(event) => setKeyword(event.target.value)} className="sticker-input" placeholder="🔍 搜索学生" />
+            <label className="sr-only" htmlFor="group-filter">分组筛选</label>
+            <select id="group-filter" value={groupId} onChange={(event) => setGroupId(event.target.value)} className="sticker-input cursor-pointer">
+              <option value="all">全部分组</option>
+              {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+            </select>
+          </div>
+          {loading ? <div className="animate-pulse p-4 text-ink-soft">加载中...</div> : null}
+          {!loading && students.length === 0 ? <div className="rounded-xl border-2 border-dashed border-ink/30 p-8 text-center text-ink-faint">暂无学生，点击「添加学生」开始</div> : null}
+          <div className="grid gap-4 md:grid-cols-3">
+            {students.map((student, index) => (
+              <article key={student.id} className={`rise-in stagger-${Math.min(index + 1, 6)} rounded-sticker border-2 border-ink/15 bg-white p-4 transition hover:-translate-y-0.5 hover:border-ink hover:shadow-sticker-sm`}>
+                <div className="font-display text-lg font-bold text-ink">{student.name}</div>
+                <div className="mt-1 text-sm text-ink-soft">
+                  <span className="font-display font-bold text-forest">{student.totalPoints}</span> 分 · {student.group?.name ?? "未分组"}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button className="btn-outline !px-3 !py-1 text-sm" onClick={() => openEdit(student)}>编辑</button>
+                  <button className="btn-outline !px-3 !py-1 text-sm !text-berry hover:!bg-berry-soft" onClick={() => removeStudent(student.id)}>删除</button>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
-      {showForm ? <div className="fixed inset-0 grid place-items-center bg-black/30 p-4"><form onSubmit={saveStudent} className="w-full max-w-md space-y-4 rounded-xl bg-white p-6"><h2 className="text-lg font-semibold">{editingId ? "编辑学生" : "添加学生"}</h2><input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="w-full rounded-lg border px-3 py-2" placeholder="姓名" /><input value={form.studentNo} onChange={(event) => setForm({ ...form, studentNo: event.target.value })} className="w-full rounded-lg border px-3 py-2" placeholder="学号（可选）" /><select value={form.groupId} onChange={(event) => setForm({ ...form, groupId: event.target.value })} className="w-full rounded-lg border px-3 py-2"><option value="">未分组</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select><div className="flex justify-end gap-2"><button type="button" className="rounded-lg border px-4 py-2" onClick={() => setShowForm(false)}>取消</button><button className="rounded-lg bg-green-600 px-4 py-2 text-white">保存</button></div></form></div> : null}
-      {showImport ? <div className="fixed inset-0 grid place-items-center bg-black/30 p-4"><form onSubmit={importStudents} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6"><h2 className="text-lg font-semibold">导入学生 JSON</h2><textarea required value={importText} onChange={(event) => setImportText(event.target.value)} className="h-48 w-full rounded-lg border p-3" placeholder='[{"name":"小明","studentNo":"001"}]' /><div className="flex justify-end gap-2"><button type="button" className="rounded-lg border px-4 py-2" onClick={() => setShowImport(false)}>取消</button><button className="rounded-lg bg-green-600 px-4 py-2 text-white">导入</button></div></form></div> : null}
+      {showForm ? (
+        <div className="fixed inset-0 grid place-items-center bg-ink/50 p-4" onMouseDown={() => setShowForm(false)}>
+          <form onSubmit={saveStudent} className="animate-pop-in w-full max-w-md space-y-4 rounded-sticker-lg border-2 border-ink bg-paper p-6 shadow-sticker-lg" onMouseDown={(event) => event.stopPropagation()}>
+            <h2 className="font-display text-xl font-bold text-ink">{editingId ? "✏️ 编辑学生" : "🧒 添加学生"}</h2>
+            <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="sticker-input w-full" placeholder="姓名" />
+            <input value={form.studentNo} onChange={(event) => setForm({ ...form, studentNo: event.target.value })} className="sticker-input w-full" placeholder="学号（可选）" />
+            <select value={form.groupId} onChange={(event) => setForm({ ...form, groupId: event.target.value })} className="sticker-input w-full cursor-pointer">
+              <option value="">未分组</option>
+              {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+            </select>
+            <div className="flex justify-end gap-2">
+              <button type="button" className="btn-outline" onClick={() => setShowForm(false)}>取消</button>
+              <button className="btn-tangerine">保存</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+      {showImport ? (
+        <div className="fixed inset-0 grid place-items-center bg-ink/50 p-4" onMouseDown={() => setShowImport(false)}>
+          <form onSubmit={importStudents} className="animate-pop-in w-full max-w-lg space-y-4 rounded-sticker-lg border-2 border-ink bg-paper p-6 shadow-sticker-lg" onMouseDown={(event) => event.stopPropagation()}>
+            <h2 className="font-display text-xl font-bold text-ink">📥 导入学生 JSON</h2>
+            <textarea required value={importText} onChange={(event) => setImportText(event.target.value)} className="sticker-input h-48 w-full !rounded-xl font-mono text-sm" placeholder='[{"name":"小明","studentNo":"001"}]' />
+            <div className="flex justify-end gap-2">
+              <button type="button" className="btn-outline" onClick={() => setShowImport(false)}>取消</button>
+              <button className="btn-tangerine">导入</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </AppShell>
   )
 }

@@ -62,9 +62,9 @@ export function ClassSwitcher({ classrooms, currentClassroomId }: ClassSwitcherP
   if (classrooms.length === 0) return null
 
   return (
-    <label className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm">
-      <span className="text-slate-500">班级</span>
-      <select aria-label="班级切换器" value={value} onChange={(event) => handleChange(event.target.value)} className="bg-transparent outline-none">
+    <label className="sticker-tight flex items-center gap-2 bg-white px-3 py-1.5 text-sm">
+      <span aria-hidden="true">🏫</span>
+      <select aria-label="班级切换器" value={value} onChange={(event) => handleChange(event.target.value)} className="max-w-[9rem] cursor-pointer bg-transparent font-semibold text-ink outline-none">
         {classrooms.map((classroom) => (
           <option key={classroom.id} value={classroom.id}>{classroom.name}</option>
         ))}

@@ -62,48 +62,57 @@ export default function StudentRewardsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold">奖励商城</h1>
-        <div className="text-slate-600">我的徽章：{availableBadges}</div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {notice ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">{notice}</div> : null}
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {items.map((item) => {
-            const soldOut = item.stock !== null && item.stock <= 0
-            const affordable = availableBadges >= item.costBadges
-            return (
-              <div key={item.id} className="rounded-xl border p-4">
-                <div className="font-medium">{item.name}</div>
-                {item.description ? <div className="mt-1 text-sm text-slate-500">{item.description}</div> : null}
-                <div className="mt-2 text-sm text-slate-500">{item.costBadges} 徽章 · 库存 {item.stock ?? "无限"}</div>
-                <button
-                  className="mt-3 rounded-lg bg-green-600 px-3 py-1 text-white disabled:opacity-50"
-                  disabled={!affordable || soldOut || pendingId === item.id}
-                  onClick={() => redeem(item)}
-                >
-                  {soldOut ? "已售罄" : pendingId === item.id ? "提交中..." : affordable ? "兑换" : "徽章不足"}
-                </button>
-              </div>
-            )
-          })}
+      <div className="mx-auto max-w-5xl space-y-5">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🛍️</span>奖励商城</h1>
+          <div className="sticker-dot !h-9 !w-auto bg-butter px-3 text-sm">🏅 我的徽章 <span className="font-display text-lg">{availableBadges}</span></div>
         </div>
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {notice ? <div className="sticker sticker-quiet !border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">{notice}</div> : null}
 
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">我的兑换记录</h2>
+        {items.length === 0 ? (
+          <div className="sticker sticker-quiet rise-in stagger-2 p-8 text-center text-ink-soft">商城还没有上架奖励商品</div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {items.map((item, index) => {
+              const soldOut = item.stock !== null && item.stock <= 0
+              const affordable = availableBadges >= item.costBadges
+              return (
+                <div key={item.id} className={`sticker rise-in stagger-${Math.min(index + 1, 6)} p-4 ${soldOut ? "opacity-60" : "sticker-hover"}`}>
+                  <div className="font-display flex items-center gap-2 text-lg font-bold text-ink">
+                    <span aria-hidden="true">{["🍭", "🎈", "📗", "🎟️", "🧩"][index % 5]}</span>
+                    <span className="truncate">{item.name}</span>
+                  </div>
+                  {item.description ? <div className="mt-1 text-sm text-ink-soft">{item.description}</div> : null}
+                  <div className="font-display mt-2 text-sm font-bold text-tangerine">🏅 {item.costBadges} 徽章 · 库存 {item.stock ?? "无限"}</div>
+                  <button
+                    className="btn-tangerine mt-3 w-full !py-1.5 text-sm disabled:opacity-40"
+                    disabled={!affordable || soldOut || pendingId === item.id}
+                    onClick={() => redeem(item)}
+                  >
+                    {soldOut ? "已售罄" : pendingId === item.id ? "提交中..." : affordable ? "兑换" : "徽章不足"}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <section className="sticker sticker-quiet rise-in stagger-4 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📮</span>我的兑换记录</h2>
           {redemptions.length === 0 ? (
-            <div className="mt-3 rounded-lg border border-dashed p-4 text-slate-500">暂无兑换记录</div>
+            <div className="mt-3 rounded-xl border-2 border-dashed border-ink/30 p-4 text-center text-sm text-ink-faint">暂无兑换记录</div>
           ) : (
             <div className="mt-3 space-y-2">
               {redemptions.map((redemption) => (
-                <div key={redemption.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <div className="font-medium">{redemption.rewardItem.name}</div>
-                    <div className="text-sm text-slate-500">{String(redemption.createdAt).slice(0, 10)}</div>
+                <div key={redemption.id} className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink">{redemption.rewardItem.name}</div>
+                    <div className="text-sm text-ink-faint">{String(redemption.createdAt).slice(0, 10)}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-slate-600">{REDEMPTION_LABELS[redemption.status] ?? redemption.status}</div>
-                    <div className="text-sm text-slate-500">-{redemption.badgesSpent} 徽章</div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm text-ink-soft">{REDEMPTION_LABELS[redemption.status] ?? redemption.status}</div>
+                    <div className="font-display font-bold text-tangerine">-{redemption.badgesSpent} 徽章</div>
                   </div>
                 </div>
               ))}

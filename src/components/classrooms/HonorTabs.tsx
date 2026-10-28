@@ -11,18 +11,18 @@ export function HonorTabs() {
   const isBadges = pathname.endsWith("/badges")
 
   return (
-    <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+    <div className="inline-flex gap-1.5 rounded-full border-2 border-ink bg-paper-deep p-1.5 shadow-sticker-sm">
       <Link
         href={`/classrooms/${classroomId}/badges`}
-        className={`rounded-md px-4 py-1.5 text-sm ${isBadges ? "bg-white font-medium text-green-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+        className={`rounded-full px-5 py-1.5 text-sm font-semibold transition ${isBadges ? "border-2 border-ink bg-butter text-ink shadow-sticker-sm" : "border-2 border-transparent text-ink-soft hover:text-ink"}`}
       >
-        徽章
+        🏅 徽章
       </Link>
       <Link
         href={`/classrooms/${classroomId}/leaderboard`}
-        className={`rounded-md px-4 py-1.5 text-sm ${!isBadges ? "bg-white font-medium text-green-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+        className={`rounded-full px-5 py-1.5 text-sm font-semibold transition ${!isBadges ? "border-2 border-ink bg-butter text-ink shadow-sticker-sm" : "border-2 border-transparent text-ink-soft hover:text-ink"}`}
       >
-        排行
+        🏆 排行
       </Link>
     </div>
   )

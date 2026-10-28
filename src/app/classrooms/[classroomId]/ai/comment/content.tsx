@@ -85,45 +85,45 @@ export default function AiCommentPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">评语生成</h1>
-          <p className="text-slate-600">先出草稿，再由教师确认。</p>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div className="rise-in">
+          <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">✍️</span>评语生成</h1>
+          <p className="mt-1 text-sm text-ink-soft">先出草稿，再由教师确认。</p>
         </div>
-        <section className="rounded-xl bg-white p-5 shadow-sm">
+        <section className="sticker sticker-quiet rise-in stagger-2 p-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
-              <span className="text-sm font-medium">选择学生</span>
+              <span className="text-sm font-semibold text-ink-soft">选择学生</span>
               <select
                 value={studentId}
                 onChange={(event) => setStudentId(event.target.value)}
                 disabled={loadingStudents || students.length === 0}
-                className="mt-1 w-full rounded-lg border px-3 py-2"
+                className="sticker-input mt-1 w-full cursor-pointer disabled:opacity-50"
               >
                 {students.length === 0 ? <option value="">暂无可选学生</option> : null}
                 {students.map((student) => <option key={student.id} value={student.id}>{student.name}{student.studentNo ? `（${student.studentNo}）` : ""}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="text-sm font-medium">语气</span>
-              <select className="mt-1 w-full rounded-lg border px-3 py-2" value={tone} onChange={(event) => setTone(event.target.value)}>
+              <span className="text-sm font-semibold text-ink-soft">语气</span>
+              <select className="sticker-input mt-1 w-full cursor-pointer" value={tone} onChange={(event) => setTone(event.target.value)}>
                 <option>鼓励</option>
                 <option>温和</option>
                 <option>严谨</option>
               </select>
             </label>
             <label className="block">
-              <span className="text-sm font-medium">补充说明</span>
-              <textarea value={teacherNote} onChange={(event) => setTeacherNote(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" rows={3} />
+              <span className="text-sm font-semibold text-ink-soft">补充说明</span>
+              <textarea value={teacherNote} onChange={(event) => setTeacherNote(event.target.value)} className="sticker-input mt-1 w-full" rows={3} />
             </label>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            {status && status !== "SUCCEEDED" && status !== "FAILED" ? <p className="text-sm text-slate-500">任务状态：{status}...</p> : null}
-            <button className="rounded-lg bg-green-600 px-4 py-2 text-white" disabled={!classroomId || !studentId || loadingStudents || status === "PENDING" || status === "RUNNING"}>{status === "PENDING" || status === "RUNNING" ? "生成中..." : "生成草稿"}</button>
+            {error ? <p className="text-sm font-semibold text-berry">{error}</p> : null}
+            {status && status !== "SUCCEEDED" && status !== "FAILED" ? <p className="animate-pulse text-sm font-semibold text-ink-soft">🤖 任务状态：{status}...</p> : null}
+            <button className="btn-tangerine disabled:opacity-40" disabled={!classroomId || !studentId || loadingStudents || status === "PENDING" || status === "RUNNING"}>{status === "PENDING" || status === "RUNNING" ? "生成中..." : "✨ 生成草稿"}</button>
           </form>
           {draft ? (
-            <div className="mt-6 rounded-lg border bg-slate-50 p-4">
-              <div className="text-sm font-medium text-slate-500">AI 草稿</div>
-              <textarea className="mt-2 min-h-32 w-full rounded-lg border p-3" value={draft} onChange={(event) => setDraft(event.target.value)} />
+            <div className="mt-6 rounded-sticker border-2 border-ink bg-butter-soft p-4 shadow-sticker-sm">
+              <div className="font-display font-bold text-ink">📝 AI 草稿（可编辑）</div>
+              <textarea className="sticker-input mt-2 min-h-32 w-full" value={draft} onChange={(event) => setDraft(event.target.value)} />
             </div>
           ) : null}
         </section>

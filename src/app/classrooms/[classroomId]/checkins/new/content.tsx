@@ -38,19 +38,19 @@ export default function NewCheckinPage() {
 
   return (
     <AppShell>
-      <section className="max-w-2xl rounded-xl bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold">创建打卡任务</h1>
+      <section className="rise-in sticker mx-auto max-w-2xl p-6">
+        <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">🌱</span>创建打卡任务</h1>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
-            <span className="text-sm font-medium">任务名称</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+            <span className="text-sm font-semibold text-ink-soft">任务名称</span>
+            <input value={title} onChange={(event) => setTitle(event.target.value)} className="sticker-input mt-1 w-full" />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">奖励分</span>
-            <input value={rewardPoints} onChange={(event) => setRewardPoints(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+            <span className="text-sm font-semibold text-ink-soft">奖励分</span>
+            <input value={rewardPoints} onChange={(event) => setRewardPoints(event.target.value)} className="sticker-input mt-1 w-full" />
           </label>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white" disabled={saving}>{saving ? "保存中..." : "保存"}</button>
+          {error ? <p className="text-sm font-semibold text-berry">{error}</p> : null}
+          <button className="btn-tangerine disabled:opacity-40" disabled={saving}>{saving ? "保存中..." : "💾 保存"}</button>
         </form>
       </section>
     </AppShell>

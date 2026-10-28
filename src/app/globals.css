@@ -4,19 +4,54 @@
 
 :root {
   color-scheme: light;
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --paper: #fbf7ee;
+  --paper-deep: #f3ecdc;
+  --ink: #1f3524;
+  --ink-soft: #4a5d4e;
+  --forest: #2f7d4f;
+  --tangerine: #f08c2e;
+  --butter: #ffd666;
+  --berry: #d64550;
+  --sky: #6fa8c9;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Segoe UI",
+    sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.7;
+
+  /* 暖纸底色 + 手册点阵 */
+  background-color: var(--paper);
+  background-image: radial-gradient(rgba(31, 53, 36, 0.075) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* 全局纸纹颗粒（极淡，覆盖全部 UI 包括弹窗，pointer-events 穿透） */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 a {
@@ -29,4 +64,227 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+::selection {
+  background: var(--butter);
+  color: var(--ink);
+}
+
+/* ---------- 暖纸教室手册组件层 ---------- */
+
+.font-display {
+  font-family:
+    "LXGW WenKai",
+    "Kaiti SC",
+    "STKaiti",
+    "KaiTi",
+    "楷体",
+    Georgia,
+    serif;
+}
+
+/* 贴纸卡：白底 + 墨绿描边 + 硬偏移阴影，hover 时轻轻浮起 */
+.sticker {
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 1.1rem;
+  box-shadow: 4px 4px 0 0 var(--ink);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sticker-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--ink);
+}
+
+.sticker-quiet {
+  box-shadow: 3px 3px 0 0 rgba(31, 53, 36, 0.22);
+}
+
+.sticker-tight {
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 0.85rem;
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* 墨绿实心按钮：按压时下陷 */
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 0.85rem;
+  box-shadow: 3px 3px 0 0 rgba(31, 53, 36, 0.45);
+  padding: 0.5rem 1.1rem;
+  font-weight: 600;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.15s ease;
+}
+
+.btn-ink:hover {
+  background: var(--forest);
+  border-color: var(--forest);
+}
+
+.btn-ink:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* 描边按钮 */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 0.85rem;
+  box-shadow: 3px 3px 0 0 rgba(31, 53, 36, 0.35);
+  padding: 0.5rem 1.1rem;
+  font-weight: 600;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.15s ease;
+}
+
+.btn-outline:hover {
+  background: var(--butter);
+}
+
+.btn-outline:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* 强调橙按钮 */
+.btn-tangerine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--tangerine);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 0.85rem;
+  box-shadow: 3px 3px 0 0 rgba(31, 53, 36, 0.4);
+  padding: 0.5rem 1.1rem;
+  font-weight: 700;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.15s ease;
+}
+
+.btn-tangerine:hover {
+  background: var(--butter);
+}
+
+.btn-tangerine:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* 输入控件 */
+.sticker-input {
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 0.7rem;
+  color: var(--ink);
+  padding: 0.45rem 0.75rem;
+  outline: none;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.sticker-input:focus {
+  box-shadow: 3px 3px 0 0 var(--sky);
+  transform: translate(-1px, -1px);
+}
+
+/* 手册虚线分隔 */
+.dashed-rule {
+  border: none;
+  border-top: 2px dashed rgba(31, 53, 36, 0.35);
+}
+
+/* 圆贴纸（页脚装饰 / 状态标记） */
+.sticker-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 2px solid var(--ink);
+  border-radius: 9999px;
+  box-shadow: 2px 2px 0 0 var(--ink);
+  font-weight: 700;
+}
+
+/* ---------- 入场编排（staggered reveal） ---------- */
+
+.rise-in {
+  animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.16s; }
+.stagger-4 { animation-delay: 0.22s; }
+.stagger-5 { animation-delay: 0.28s; }
+.stagger-6 { animation-delay: 0.34s; }
+.stagger-7 { animation-delay: 0.42s; }
+.stagger-8 { animation-delay: 0.5s; }
+
+/* 宠物摇摆：挂在 group-hover 上 */
+.wiggle-hover {
+  animation: wiggle 0.4s ease-in-out infinite;
+  animation-play-state: paused;
+}
+
+.group:hover .wiggle-hover {
+  animation-play-state: running;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+
+/* 侧栏激活标签的“贴上去”手账感（奇偶交替微旋转） */
+.tag-tilt-a { transform: rotate(-0.8deg); }
+.tag-tilt-b { transform: rotate(0.6deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

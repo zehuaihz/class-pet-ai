@@ -94,27 +94,27 @@ export default function CheckinsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="rise-in flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">打卡任务</h1>
-            <p className="text-slate-600">创建任务、查看完成率、补录和审批。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink"><span aria-hidden="true">📅</span>打卡任务</h1>
+            <p className="mt-1 text-sm text-ink-soft">创建任务、查看完成率、补录和审批。</p>
           </div>
-          <Link href={`/classrooms/${classroomId}/checkins/new`} className="rounded-lg bg-green-600 px-4 py-2 text-white">创建任务</Link>
+          <Link href={`/classrooms/${classroomId}/checkins/new`} className="btn-tangerine">＋ 创建任务</Link>
         </div>
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {notice ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-green-700">{notice}</div> : null}
-        {!classroomId ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">缺少班级上下文，请从班级列表进入。</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 shadow-sm">加载中...</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {notice ? <div className="sticker sticker-quiet !border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">{notice}</div> : null}
+        {!classroomId ? <div className="sticker sticker-quiet bg-butter-soft p-4 font-semibold text-tangerine">缺少班级上下文，请从班级列表进入。</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
 
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">补录打卡</h2>
-          <p className="mt-1 text-sm text-slate-500">为学生手动补录打卡记录，是否需要审批取决于任务的证据要求。</p>
+        <section className="sticker sticker-quiet rise-in stagger-2 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📮</span>补录打卡</h2>
+          <p className="mt-1 text-sm text-ink-soft">为学生手动补录打卡记录，是否需要审批取决于任务的证据要求。</p>
           <form className="mt-4 grid gap-3 md:grid-cols-4" onSubmit={handleManualCheckin}>
             <label className="text-sm">
-              <span className="text-slate-600">打卡任务</span>
+              <span className="font-semibold text-ink-soft">打卡任务</span>
               <select
-                className="mt-1 w-full rounded-lg border px-3 py-2"
+                className="sticker-input mt-1 w-full cursor-pointer"
                 value={manualTaskId}
                 onChange={(event) => setManualTaskId(event.target.value)}
                 required
@@ -128,9 +128,9 @@ export default function CheckinsPage() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="text-slate-600">学生</span>
+              <span className="font-semibold text-ink-soft">学生</span>
               <select
-                className="mt-1 w-full rounded-lg border px-3 py-2"
+                className="sticker-input mt-1 w-full cursor-pointer"
                 value={manualStudentId}
                 onChange={(event) => setManualStudentId(event.target.value)}
                 required
@@ -145,10 +145,10 @@ export default function CheckinsPage() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="text-slate-600">证据链接（可选）</span>
+              <span className="font-semibold text-ink-soft">证据链接（可选）</span>
               <input
                 type="url"
-                className="mt-1 w-full rounded-lg border px-3 py-2"
+                className="sticker-input mt-1 w-full"
                 value={manualEvidence}
                 onChange={(event) => setManualEvidence(event.target.value)}
                 placeholder="https://..."
@@ -156,7 +156,7 @@ export default function CheckinsPage() {
             </label>
             <div className="flex items-end">
               <button
-                className="w-full rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50"
+                className="btn-ink w-full disabled:opacity-40"
                 disabled={submitting || !manualTaskId || !manualStudentId}
               >
                 {submitting ? "提交中..." : "确认补录"}
@@ -164,35 +164,36 @@ export default function CheckinsPage() {
             </div>
           </form>
         </section>
-        <div className="space-y-3 rounded-xl bg-white p-5 shadow-sm">
+        <div className="sticker sticker-quiet rise-in stagger-3 space-y-3 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📋</span>任务列表</h2>
+          {tasks.length === 0 ? <div className="rounded-xl border-2 border-dashed border-ink/30 p-6 text-center text-sm text-ink-faint">还没有打卡任务</div> : null}
           {tasks.map((task) => (
-            <div key={task.id} className="rounded-lg border p-4">
-              <div className="flex items-center justify-between">
-                <div>
+            <div key={task.id} className="rounded-xl border-2 border-ink/15 bg-white p-4 transition hover:border-ink">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
                   {/* data-testid keeps the task card addressable even though the
                       manual check-in <select> repeats the same title text. */}
-                  <div className="font-semibold" data-testid="checkin-task-title">{task.title}</div>
-                  <div className="text-sm text-slate-500">完成 {task.stats?.completedCount ?? 0}/{task.stats?.totalStudents ?? 0} · 待审 {task.stats?.pendingCount ?? 0} · 漏卡 {task.stats?.missedCount ?? 0} · {Math.round((task.stats?.completionRate ?? 0) * 100)}%</div>
+                  <div className="font-semibold text-ink" data-testid="checkin-task-title">{task.title}</div>
+                  <div className="mt-0.5 text-sm text-ink-soft">完成 <span className="font-display font-bold text-forest">{task.stats?.completedCount ?? 0}/{task.stats?.totalStudents ?? 0}</span> · 待审 {task.stats?.pendingCount ?? 0} · 漏卡 {task.stats?.missedCount ?? 0} · {Math.round((task.stats?.completionRate ?? 0) * 100)}%</div>
                 </div>
-                <span className="font-semibold text-green-600">+{task.rewardPoints}</span>
+                <span className="sticker-dot !h-7 !w-auto shrink-0 bg-forest-mist px-2 text-sm">+{task.rewardPoints}</span>
               </div>
             </div>
           ))}
         </div>
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">待审批</h2>
+        <section className="sticker sticker-quiet rise-in stagger-4 p-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">✅</span>待审批</h2>
           <div className="mt-4 space-y-3">
+            {records.length === 0 ? <div className="rounded-xl border-2 border-dashed border-ink/30 p-6 text-center text-sm text-ink-faint">暂无待审批记录</div> : null}
             {records.map((record) => (
-              <div key={record.id} className="rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{record.studentName}</div>
-                    <div className="text-sm text-slate-500">{record.taskTitle}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="rounded-lg border px-3 py-1" onClick={() => handleReject(record.id)}>驳回</button>
-                    <button className="rounded-lg bg-green-600 px-3 py-1 text-white" onClick={() => handleApprove(record.id)}>通过</button>
-                  </div>
+              <div key={record.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-white p-4">
+                <div className="min-w-0">
+                  <div className="font-semibold text-ink">{record.studentName}</div>
+                  <div className="text-sm text-ink-soft">{record.taskTitle}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn-outline !px-3 !py-1 text-sm" onClick={() => handleReject(record.id)}>驳回</button>
+                  <button className="btn-ink !px-3 !py-1 text-sm" onClick={() => handleApprove(record.id)}>通过</button>
                 </div>
               </div>
             ))}

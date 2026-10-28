@@ -92,61 +92,73 @@ export default function PointsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="rise-in flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">积分管理</h1>
-            <p className="text-slate-600">快捷加分、流水追踪、排行榜和撤销。</p>
+            <h1 className="font-display flex items-center gap-2 text-3xl font-bold text-ink">
+              <span aria-hidden="true">✨</span>积分管理
+            </h1>
+            <p className="mt-1 text-sm text-ink-soft">快捷加分、流水追踪、排行榜和撤销。</p>
           </div>
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-white" onClick={() => setOpen(true)} disabled={students.length === 0}>快捷加分</button>
+          <button className="btn-tangerine disabled:opacity-40" onClick={() => setOpen(true)} disabled={students.length === 0}>＋ 快捷加分</button>
         </div>
 
-        {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-        {loading ? <div className="rounded-lg bg-white p-5 shadow-sm">加载中...</div> : null}
+        {error ? <div className="sticker sticker-quiet !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+        {loading ? <div className="sticker sticker-quiet animate-pulse p-6 text-ink-soft">加载中...</div> : null}
 
         <section className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 rounded-xl bg-white p-5 shadow-sm">
-            <h2 className="font-semibold">积分流水</h2>
-            <div className="mt-4 space-y-3">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <div className="font-medium">{tx.name}</div>
-                    <div className="text-sm text-slate-500">{tx.reason} · {tx.time}</div>
+          <div className="sticker sticker-quiet rise-in stagger-2 p-5 lg:col-span-2">
+            <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">📜</span>积分流水</h2>
+            <div className="mt-4 space-y-2.5">
+              {transactions.length === 0 ? (
+                <p className="rounded-xl border-2 border-dashed border-ink/30 px-4 py-6 text-center text-sm text-ink-faint">还没有积分流水</p>
+              ) : transactions.map((tx) => (
+                <div key={tx.id} className={`flex items-center justify-between gap-3 rounded-xl border-2 p-3 ${tx.reversalOfId ? "border-ink/10 bg-paper-deep/60 opacity-70" : "border-ink/15 bg-white"}`}>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink">{tx.name}{tx.reversalOfId ? <span className="ml-2 rounded-full bg-berry-soft px-2 py-0.5 text-xs font-semibold text-berry">已撤销</span> : null}</div>
+                    <div className="truncate text-sm text-ink-soft">{tx.reason} · {tx.time}</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`font-semibold ${tx.delta >= 0 ? "text-green-600" : "text-red-600"}`}>{tx.delta >= 0 ? "+" : ""}{tx.delta}</span>
-                    {!tx.reversalOfId && <button className="text-sm text-slate-500" onClick={() => handleReverse(tx.id)}>撤销</button>}
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className={`font-display text-lg font-bold ${tx.delta >= 0 ? "text-forest" : "text-berry"}`}>{tx.delta >= 0 ? "+" : ""}{tx.delta}</span>
+                    {!tx.reversalOfId && <button className="btn-outline !px-2.5 !py-0.5 text-xs" onClick={() => handleReverse(tx.id)}>撤销</button>}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
-            <h2 className="font-semibold">排行榜</h2>
-            <div className="mt-4 space-y-3">
-              {studentRankings.map((student) => {
-                const target = students.find((item) => item.id === student.studentId) ?? { id: student.studentId, name: student.name, totalPoints: student.totalPoints }
-                return <div key={student.studentId} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <div className="font-medium">{student.rank}. {student.name}</div>
-                    <div className="text-sm text-slate-500">{student.totalPoints} 分</div>
+          <div className="space-y-6">
+            <div className="sticker sticker-quiet rise-in stagger-3 p-5">
+              <h2 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🏆</span>排行榜</h2>
+              <div className="mt-4 space-y-2.5">
+                {studentRankings.map((student, index) => {
+                  const target = students.find((item) => item.id === student.studentId) ?? { id: student.studentId, name: student.name, totalPoints: student.totalPoints }
+                  return <div key={student.studentId} className={`flex items-center justify-between gap-3 rounded-xl border-2 p-3 ${index === 0 ? "border-ink bg-butter-soft shadow-sticker-sm" : "border-ink/15 bg-white"}`}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 font-semibold text-ink">
+                        <span className="sticker-dot !h-6 !w-6 !text-xs" aria-hidden="true">{["🥇", "🥈", "🥉"][index] ?? student.rank}</span>
+                        <span className="truncate">{student.name}</span>
+                      </div>
+                      <div className="font-display mt-0.5 text-sm font-bold text-ink-soft">{student.totalPoints} 分</div>
+                    </div>
+                    <button className="btn-outline !px-2.5 !py-0.5 text-xs" onClick={() => {
+                      setSelectedStudent(target)
+                      setOpen(true)
+                    }}>+1</button>
                   </div>
-                  <button className="rounded-lg border px-3 py-1 text-sm" onClick={() => {
-                    setSelectedStudent(target)
-                    setOpen(true)
-                  }}>+1</button>
-                </div>
-              })}
+                })}
+                {studentRankings.length === 0 ? (
+                  <p className="rounded-xl border-2 border-dashed border-ink/30 px-4 py-6 text-center text-sm text-ink-faint">暂无排名</p>
+                ) : null}
+              </div>
             </div>
             {groups.length > 0 ? (
-              <div className="mt-6">
-                <h3 className="font-semibold">小组榜</h3>
+              <div className="sticker sticker-quiet rise-in stagger-4 p-5">
+                <h3 className="font-display flex items-center gap-2 text-lg font-bold text-ink"><span aria-hidden="true">🤝</span>小组榜</h3>
                 <div className="mt-3 space-y-2">
-                  {groups.map((group) => (
-                    <div key={group.rank} className="flex items-center justify-between rounded-lg border p-3">
-                      <div><div className="font-medium">{group.rank}. {group.name}</div><div className="text-sm text-slate-500">{group.totalPoints} 分</div></div>
+                  {groups.map((group, index) => (
+                    <div key={group.rank} className={`flex items-center justify-between rounded-xl border-2 p-3 ${index === 0 ? "border-ink bg-butter-soft shadow-sticker-sm" : "border-ink/15 bg-white"}`}>
+                      <div className="min-w-0"><div className="font-semibold text-ink">{group.rank}. {group.name}</div><div className="font-display text-sm font-bold text-ink-soft">{group.totalPoints} 分</div></div>
                     </div>
                   ))}
                 </div>

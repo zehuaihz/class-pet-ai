@@ -133,50 +133,50 @@ export function PetDetailModal({ open, classroomId, studentId, studentName, onCl
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl outline-none"
+        className="animate-pop-in flex max-h-[90vh] w-full max-w-lg flex-col rounded-sticker-lg border-2 border-ink bg-paper outline-none shadow-sticker-lg"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex items-center justify-between gap-3 border-b-2 border-ink bg-paper-deep px-6 py-4">
           <div>
-            <h2 className="text-xl font-bold">{studentName} 的宠物</h2>
-            <p className="text-sm text-slate-500">喂食推进成长，扣分会让进度倒退。</p>
+            <h2 className="font-display text-xl font-bold text-ink">🐾 {studentName} 的宠物</h2>
+            <p className="text-sm text-ink-soft">喂食推进成长，扣分会让进度倒退。</p>
           </div>
-          <button className="rounded-lg border px-3 py-1 text-sm" onClick={onClose}>关闭</button>
+          <button className="btn-outline !px-3 !py-1 text-sm" onClick={onClose}>关闭</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{error}</div> : null}
-          {loading && !pet ? <div className="p-6 text-center text-slate-500">加载中...</div> : null}
+          {error ? <div className="sticker-tight mb-4 !border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{error}</div> : null}
+          {loading && !pet ? <div className="animate-pulse p-6 text-center text-ink-soft">加载中...</div> : null}
 
           {!loading && !pet ? (
             <div className="space-y-4 text-center">
-              <div className="text-6xl">🐾</div>
-              <p className="text-slate-500">该学生还没有宠物，请先分配。</p>
+              <div className="text-6xl opacity-60">🐾</div>
+              <p className="text-ink-soft">该学生还没有宠物，请先分配。</p>
             </div>
           ) : null}
 
           {pet ? (
             <>
-              <section className="rounded-2xl bg-gradient-to-b from-green-50 to-white p-6 text-center">
+              <section className="rounded-sticker border-2 border-ink bg-forest-mist p-6 text-center shadow-sticker-sm">
                 <div className="flex justify-center">
                   <PetVisual speciesKey={pet.speciesKey} level={pet.level} size="text-8xl" />
                 </div>
-                <div className="mt-3 text-lg font-semibold">
-                  {pet.name} <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-sm text-green-700">Lv.{pet.level}</span>
+                <div className="font-display mt-3 text-lg font-bold text-ink">
+                  {pet.name} <span className="sticker-dot ml-1 !h-6 !w-auto bg-butter px-2 text-xs">Lv.{pet.level}</span>
                 </div>
-                <div className="mt-1 text-sm text-slate-500">
+                <div className="mt-1 text-sm text-ink-soft">
                   {pet.graduated ? "已毕业 🎓" : `累计食物 ${pet.growthValue}`}
                 </div>
                 {!pet.graduated ? (
                   <>
-                    <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500 transition-all" style={{ width: `${Math.round(pet.progressRatio * 100)}%` }} />
+                    <div className="mt-3 h-3 overflow-hidden rounded-full border-2 border-ink bg-white">
+                      <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${Math.round(pet.progressRatio * 100)}%` }} />
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
+                    <div className="mt-2 text-xs text-ink-soft">
                       {pet.nextThreshold != null ? `距离 Lv.${pet.level + 1} 还差 ${pet.remainingToNext} 食物` : ""}
                     </div>
                   </>
@@ -184,22 +184,22 @@ export function PetDetailModal({ open, classroomId, studentId, studentName, onCl
               </section>
 
               {pet.graduated ? (
-                <section className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
-                  <div className="font-semibold text-amber-800">🎓 养成毕业，获得 1 枚徽章！</div>
-                  <button className="mt-3 rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" disabled={submitting} onClick={adoptNext}>
+                <section className="sticker-tight mt-4 bg-butter-soft p-4 text-center">
+                  <div className="font-display font-bold text-tangerine">🎓 养成毕业，获得 1 枚徽章！</div>
+                  <button className="btn-ink mt-3" disabled={submitting} onClick={adoptNext}>
                     领养下一只新宠物
                   </button>
                 </section>
               ) : (
-                <section className="mt-4 space-y-3 rounded-xl border p-4">
-                  <div className="font-semibold">喂食 / 扣分</div>
+                <section className="mt-4 space-y-3 rounded-sticker border-2 border-ink bg-white p-4 shadow-sticker-sm">
+                  <div className="font-display font-bold text-ink">🍖 喂食 / 扣分</div>
                   <div className="flex flex-wrap gap-2">
                     {QUICK_FEEDS.map((quick) => (
                       <button
                         key={quick.label}
                         type="button"
                         disabled={submitting}
-                        className={`rounded-full px-3 py-1.5 text-sm transition disabled:opacity-50 ${quick.delta >= 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                        className={`rounded-full border-2 border-ink px-3 py-1.5 text-sm font-semibold transition disabled:opacity-50 ${quick.delta >= 0 ? "bg-forest-mist text-forest-deep hover:bg-forest hover:text-white" : "bg-berry-soft text-berry hover:bg-berry hover:text-white"}`}
                         onClick={() => feed(quick.delta, quick.reason)}
                       >
                         {quick.label}
@@ -207,11 +207,11 @@ export function PetDetailModal({ open, classroomId, studentId, studentName, onCl
                     ))}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg border px-3 py-2" onClick={() => setDelta((value) => Math.max(-99, value - 1))}>−</button>
-                    <span className={`w-8 text-center font-bold ${delta >= 0 ? "text-green-600" : "text-red-600"}`}>{delta > 0 ? `+${delta}` : delta}</span>
-                    <button type="button" className="rounded-lg border px-3 py-2" onClick={() => setDelta((value) => Math.min(99, value + 1))}>＋</button>
-                    <input value={reason} onChange={(event) => setReason(event.target.value)} className="flex-1 rounded-lg border px-3 py-2" placeholder="填写原因" />
-                    <button type="button" disabled={submitting || !reason.trim()} className="rounded-lg bg-green-600 px-4 py-2 text-white disabled:opacity-50" onClick={() => feed(delta, reason)}>
+                    <button type="button" className="btn-outline !px-3 !py-1.5" onClick={() => setDelta((value) => Math.max(-99, value - 1))}>−</button>
+                    <span className={`font-display w-8 text-center text-lg font-bold ${delta >= 0 ? "text-forest" : "text-berry"}`}>{delta > 0 ? `+${delta}` : delta}</span>
+                    <button type="button" className="btn-outline !px-3 !py-1.5" onClick={() => setDelta((value) => Math.min(99, value + 1))}>＋</button>
+                    <input value={reason} onChange={(event) => setReason(event.target.value)} className="sticker-input flex-1" placeholder="填写原因" />
+                    <button type="button" disabled={submitting || !reason.trim()} className="btn-tangerine disabled:opacity-40" onClick={() => feed(delta, reason)}>
                       确认
                     </button>
                   </div>
@@ -220,10 +220,10 @@ export function PetDetailModal({ open, classroomId, studentId, studentName, onCl
 
               {detail && detail.badges.length > 0 ? (
                 <section className="mt-4">
-                  <div className="font-semibold">已获徽章</div>
+                  <div className="font-display font-bold text-ink">🏅 已获徽章</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {detail.badges.map((badge) => (
-                      <span key={badge.id} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${badge.status === "CONSUMED" ? "bg-slate-100 text-slate-400 line-through" : "bg-amber-100 text-amber-700"}`}>
+                      <span key={badge.id} className={`inline-flex items-center gap-1 rounded-full border-2 border-ink px-3 py-1 text-sm font-semibold ${badge.status === "CONSUMED" ? "bg-paper-deep text-ink-faint line-through" : "bg-butter text-ink shadow-sticker-sm"}`}>
                         🏅 {badge.name}
                       </span>
                     ))}
@@ -232,17 +232,17 @@ export function PetDetailModal({ open, classroomId, studentId, studentName, onCl
               ) : null}
 
               <section className="mt-4">
-                <div className="font-semibold">成长记录</div>
+                <div className="font-display font-bold text-ink">📖 成长记录</div>
                 <div className="mt-2 space-y-2">
                   {(detail?.logs ?? []).slice(0, 15).map((log) => (
-                    <div key={log.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                      <span className="text-slate-700">{log.reason}</span>
-                      <span className={`font-semibold ${log.growthDelta >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <div key={log.id} className="flex items-center justify-between rounded-xl border-2 border-ink/15 bg-white px-3 py-2 text-sm">
+                      <span className="text-ink-soft">{log.reason}</span>
+                      <span className={`font-display font-bold ${log.growthDelta >= 0 ? "text-forest" : "text-berry"}`}>
                         {log.growthDelta >= 0 ? "+" : ""}{log.growthDelta}
                       </span>
                     </div>
                   ))}
-                  {(detail?.logs ?? []).length === 0 ? <div className="text-sm text-slate-400">暂无记录</div> : null}
+                  {(detail?.logs ?? []).length === 0 ? <div className="text-sm text-ink-faint">暂无记录</div> : null}
                 </div>
               </section>
             </>
