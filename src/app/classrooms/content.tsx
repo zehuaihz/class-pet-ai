@@ -11,7 +11,7 @@ interface ClassroomSummary {
   grade?: string | null
   schoolName?: string | null
   studentCount: number
-  petLevel: number
+  petCount: number
 }
 
 export default function ClassroomsPage() {
@@ -44,7 +44,7 @@ export default function ClassroomsPage() {
             <Link key={classroom.id} href={`/classrooms/${classroom.id}/students`} className="rounded-xl bg-white p-5 shadow-sm transition hover:ring-2 hover:ring-green-200">
               <div className="text-lg font-semibold">{classroom.name}</div>
               <div className="mt-2 text-sm text-slate-500">{classroom.grade ?? "未设置年级"} · {classroom.schoolName ?? "未设置学校"}</div>
-              <div className="mt-4 flex justify-between text-sm"><span>{classroom.studentCount} 名学生</span><span>宠物 Lv.{classroom.petLevel}</span></div>
+              <div className="mt-4 flex justify-between text-sm"><span>{classroom.studentCount} 名学生</span><span>宠物 ×{classroom.petCount}</span></div>
             </Link>
           ))}
         </div>

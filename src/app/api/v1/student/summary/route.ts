@@ -7,9 +7,16 @@ export async function GET() {
     const user = await requireStudent()
     const student = await prisma.student.findUnique({
       where: { id: user.studentId },
-      include: { classroom: { include: { pet: true } }, group: true },
+      include: { classroom: true, group: true },
     })
     if (!student) return jsonOk({ student: null })
+
+    // zoo 体系：学生个人成长宠物取代旧"班级宠物"。
+    const pet = await prisma.studentPet.findFirst({
+      where: { studentId: student.id, status: "GROWING" },
+      select: { name: true, level: true },
+    })
+
     return jsonOk({
       student: {
         id: student.id,
@@ -17,7 +24,7 @@ export async function GET() {
         totalPoints: student.totalPoints,
         group: student.group?.name ?? null,
         classroom: { id: student.classroom.id, name: student.classroom.name },
-        pet: student.classroom.pet ? { name: student.classroom.pet.name, level: student.classroom.pet.level } : null,
+        pet: pet ? { name: pet.name, level: pet.level } : null,
       },
     })
   } catch (error) {

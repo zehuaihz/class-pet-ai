@@ -1,7 +1,60 @@
-import { AiJobStatus, AiJobType, Prisma, UserRole } from "@prisma/client"
+import { AiJobStatus, AiJobType, PetStatus, Prisma, UserRole } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { createTeacher } from "../factories/user.factory"
 import { hashPassword } from "@/server/auth/password"
+
+/** 测试用宠物品种：StudentPet.speciesKey 外键依赖 PetSpecies 存在。 */
+const TEST_SPECIES_KEY = "cat-orange"
+
+async function ensureTestPetSpecies() {
+  return prisma.petSpecies.upsert({
+    where: { key: TEST_SPECIES_KEY },
+    update: {},
+    create: {
+      key: TEST_SPECIES_KEY,
+      name: "橘猫",
+      category: "cat",
+      visualSlots: { "1": `${TEST_SPECIES_KEY}-lv1`, "2": `${TEST_SPECIES_KEY}-lv2`, "3": `${TEST_SPECIES_KEY}-lv3`, "4": `${TEST_SPECIES_KEY}-lv4` },
+      sortOrder: 0,
+    },
+  })
+}
+
+/**
+ * 给学生发放 count 枚可用徽章。
+ *
+ * zoo 体系下每枚徽章必须对应一只已毕业的宠物（Badge.studentPetId 唯一），
+ * 所以每枚徽章都会先创建一只 GRADUATED 宠物再挂徽章。
+ */
+export async function grantBadgesToStudent(studentId: string, count: number) {
+  const species = await ensureTestPetSpecies()
+  const badges = []
+  for (let index = 0; index < count; index += 1) {
+    const pet = await prisma.studentPet.create({
+      data: {
+        studentId,
+        speciesKey: species.key,
+        name: `毕业宠${index + 1}`,
+        level: 4,
+        growthValue: 60,
+        status: PetStatus.GRADUATED,
+        graduatedAt: new Date(),
+        adoptionSeq: index + 1,
+      },
+    })
+    badges.push(
+      await prisma.badge.create({
+        data: {
+          studentId,
+          studentPetId: pet.id,
+          name: `${species.name}毕业徽章`,
+          visualKey: "badge-default",
+        },
+      }),
+    )
+  }
+  return badges
+}
 
 export interface SeedClassroomInput {
   teacher: { email: string; password?: string; name: string }
@@ -10,7 +63,7 @@ export interface SeedClassroomInput {
   groups?: Array<{ name: string; totalPoints?: number }>
   pointRules?: Array<{ name: string; pointDelta: number; enabled?: boolean }>
   pointTransactions?: Array<{ studentName: string; delta: number; reason: string }>
-  rewardItems?: Array<{ name: string; costPoints: number; stock?: number | null; enabled?: boolean }>
+  rewardItems?: Array<{ name: string; costBadges: number; stock?: number | null; enabled?: boolean }>
   checkinTasks?: Array<{ title: string; rewardPoints: number; requireEvidence?: boolean }>
   aiJobs?: Array<{
     type: AiJobType
@@ -39,16 +92,7 @@ export async function seedClassroomForTeacher(input: SeedClassroomInput) {
     },
   })
 
-  const pet =
-    input.withPet === false
-      ? null
-      : await prisma.pet.create({
-          data: {
-            classroomId: classroom.id,
-            name: "云朵龙",
-            species: "dragon",
-          },
-        })
+  await ensureTestPetSpecies()
 
   const groups = await Promise.all(
     (input.groups ?? []).map((group) =>
@@ -75,6 +119,26 @@ export async function seedClassroomForTeacher(input: SeedClassroomInput) {
       }),
     ),
   )
+
+  // zoo 体系：每位学生一只成长中的宠物（班级宠物已被 StudentPet 取代）。
+  const studentPets =
+    input.withPet === false
+      ? []
+      : await Promise.all(
+          students.map((student) =>
+            prisma.studentPet.create({
+              data: {
+                studentId: student.id,
+                speciesKey: TEST_SPECIES_KEY,
+                name: "橘猫",
+                level: 1,
+                growthValue: 0,
+                status: PetStatus.GROWING,
+                adoptionSeq: 1,
+              },
+            }),
+          ),
+        )
 
   if (input.passwordCredential) {
     const { passwordHash, passwordSalt } = hashPassword(input.passwordCredential.password)
@@ -118,7 +182,7 @@ export async function seedClassroomForTeacher(input: SeedClassroomInput) {
         data: {
           classroomId: classroom.id,
           name: item.name,
-          costPoints: item.costPoints,
+          costBadges: item.costBadges,
           stock: item.stock === undefined ? null : item.stock,
           enabled: item.enabled ?? true,
         },
@@ -163,7 +227,7 @@ export async function seedClassroomForTeacher(input: SeedClassroomInput) {
     teacherUser,
     teacher: teacherProfile,
     classroom,
-    pet,
+    studentPets,
     groups,
     students,
     pointRules,

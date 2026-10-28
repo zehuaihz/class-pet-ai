@@ -21,7 +21,7 @@ import {
   expectAppError,
   expectBalanceMatchesLedger,
   isPrismaError,
-  readPetGrowth,
+  readStudentPetGrowth,
   readStudentPoints,
   settleAll,
 } from "./setup/harness"
@@ -48,7 +48,7 @@ async function seedPendingCheckin() {
 
 describe("checkin approval concurrency", () => {
   it("grants the reward exactly once for N parallel approvals", async () => {
-    const { teacher, classroom, student, record } = await seedPendingCheckin()
+    const { teacher, student, record } = await seedPendingCheckin()
     expect(record.status).toBe(CheckinStatus.PENDING)
 
     const { fulfilled, rejected } = await settleAll(
@@ -68,7 +68,7 @@ describe("checkin approval concurrency", () => {
     expect(await readStudentPoints(student.id)).toBe(REWARD)
     expect(await expectBalanceMatchesLedger(student.id)).toBe(REWARD)
 
-    expect(await readPetGrowth(classroom.id)).toBe(REWARD)
+    expect(await readStudentPetGrowth(student.id)).toBe(REWARD)
     expect(await prisma.petGrowthLog.count()).toBe(1)
 
     expect(await prisma.auditLog.count({ where: { action: "CHECKIN_APPROVED" } })).toBe(1)

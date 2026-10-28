@@ -60,8 +60,11 @@ describe("integration database smoke", () => {
     const updatedStudent = await prisma.student.findUniqueOrThrow({ where: { id: student.id } })
     expect(updatedStudent.totalPoints).toBe(15)
 
-    const pet = await prisma.pet.findUniqueOrThrow({ where: { classroomId: classroom.id } })
-    expect(pet.growthValue).toBe(15)
+    // zoo 体系：正加分会自动喂食该学生的成长宠物。
+    const studentPet = await prisma.studentPet.findFirstOrThrow({
+      where: { studentId: student.id, status: "GROWING" },
+    })
+    expect(studentPet.growthValue).toBe(15)
 
     const growthLogs = await prisma.petGrowthLog.findMany({ where: { pointTransactionId: transaction.id } })
     expect(growthLogs).toHaveLength(1)

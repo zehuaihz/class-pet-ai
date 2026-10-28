@@ -18,7 +18,7 @@ interface QuickAddModalProps {
   open: boolean
   student: StudentTarget | null
   defaultRules: DefaultRule[]
-  onSubmit: (input: { studentId: string; delta: number; reason: string; ruleId?: string; syncPetGrowth: boolean; idempotencyKey: string }) => Promise<void>
+  onSubmit: (input: { studentId: string; delta: number; reason: string; ruleId?: string; idempotencyKey: string }) => Promise<void>
   onOpenChange: (open: boolean) => void
 }
 
@@ -67,7 +67,6 @@ export function QuickAddModal({ open, student, defaultRules, onSubmit, onOpenCha
         delta,
         reason: reason.trim(),
         ruleId,
-        syncPetGrowth: true,
         idempotencyKey,
       })
       onOpenChange(false)

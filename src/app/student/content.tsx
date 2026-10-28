@@ -40,7 +40,7 @@ export default function StudentPage() {
           <div className="rounded-xl bg-white p-6 shadow-sm">
             <div className="text-lg font-semibold">{summary.name}</div>
             <div className="mt-2 text-slate-500">{summary.classroom.name} · {summary.group ?? "未分组"} · {summary.totalPoints} 分</div>
-            {summary.pet ? <div className="mt-2 text-slate-500">班级宠物：{summary.pet.name} Lv.{summary.pet.level}</div> : null}
+            {summary.pet ? <div className="mt-2 text-slate-500">我的宠物：{summary.pet.name} Lv.{summary.pet.level}</div> : null}
           </div>
         ) : null}
       </div>

@@ -27,9 +27,4 @@ export async function seedMockedSpecFixtures(prisma: PrismaClient, teacherEmail:
       inviteCode: "MOCKED1",
     },
   })
-
-  const pet = await prisma.pet.findUnique({ where: { classroomId } })
-  if (!pet) {
-    await prisma.pet.create({ data: { classroomId, name: "小宠", species: "cat", level: 1 } })
-  }
 }

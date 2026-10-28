@@ -80,9 +80,9 @@ export async function readStudentPoints(studentId: string): Promise<number> {
   return student.totalPoints
 }
 
-export async function readPetGrowth(classroomId: string): Promise<number> {
-  const pet = await prisma.pet.findUniqueOrThrow({
-    where: { classroomId },
+export async function readStudentPetGrowth(studentId: string): Promise<number> {
+  const pet = await prisma.studentPet.findFirstOrThrow({
+    where: { studentId, status: "GROWING" },
     select: { growthValue: true },
   })
   return pet.growthValue

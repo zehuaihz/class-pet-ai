@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from "@prisma/client"
+import { PetStatus, PrismaClient, UserRole } from "@prisma/client"
 import { hashPassword } from "../../src/server/auth/password"
 import {
   E2E_CLASSROOM_NAME,
@@ -6,6 +6,9 @@ import {
   E2E_REWARD_NAME,
   E2E_TASK_TITLE,
 } from "./env"
+
+// 学生用于兑换的徽章数：并发兑换 3 次 × costBadges 10，留足余量。
+const E2E_BADGE_COUNT = 30
 
 /**
  * Self-contained seed for the authenticated E2E suite. It resets only the rows
@@ -33,13 +36,55 @@ export async function seedE2E(prisma: PrismaClient, teacherEmail: string) {
     },
   })
 
-  await prisma.pet.create({
-    data: { classroomId: classroom.id, name: "E2E 小宠", species: "cat", level: 1 },
-  })
-
   const student = await prisma.student.create({
     data: { classroomId: classroom.id, name: "E2E 学生", studentNo: "E2E001", totalPoints: 100 },
   })
+
+  // zoo 体系：学生一只成长宠物 + 若干毕业徽章用于奖励兑换。
+  const species = await prisma.petSpecies.upsert({
+    where: { key: "cat-orange" },
+    update: {},
+    create: {
+      key: "cat-orange",
+      name: "橘猫",
+      category: "cat",
+      visualSlots: { "1": "cat-orange-lv1", "2": "cat-orange-lv2", "3": "cat-orange-lv3", "4": "cat-orange-lv4" },
+      sortOrder: 0,
+    },
+  })
+  await prisma.studentPet.create({
+    data: {
+      studentId: student.id,
+      speciesKey: species.key,
+      name: "E2E 橘猫",
+      level: 1,
+      growthValue: 0,
+      status: PetStatus.GROWING,
+      adoptionSeq: 1,
+    },
+  })
+  for (let index = 0; index < E2E_BADGE_COUNT; index += 1) {
+    const graduated = await prisma.studentPet.create({
+      data: {
+        studentId: student.id,
+        speciesKey: species.key,
+        name: `E2E 毕业宠${index + 1}`,
+        level: 4,
+        growthValue: 60,
+        status: PetStatus.GRADUATED,
+        graduatedAt: new Date(),
+        adoptionSeq: index + 2,
+      },
+    })
+    await prisma.badge.create({
+      data: {
+        studentId: student.id,
+        studentPetId: graduated.id,
+        name: "E2E 毕业徽章",
+        visualKey: "badge-default",
+      },
+    })
+  }
 
   const [, studentUser, parentUser, , suspendedUser] = await Promise.all([
     prisma.pointRule.create({
@@ -97,7 +142,7 @@ export async function seedE2E(prisma: PrismaClient, teacherEmail: string) {
       classroomId: classroom.id,
       name: E2E_REWARD_NAME,
       description: "E2E 自动化奖励",
-      costPoints: 10,
+      costBadges: 10,
       stock: 2,
       enabled: true,
     },

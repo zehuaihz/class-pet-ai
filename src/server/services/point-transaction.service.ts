@@ -1,4 +1,4 @@
-import { PointTransactionSource, Prisma } from "@prisma/client"
+import { PointTransaction, PointTransactionSource, Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { assertTeacherOwnsClassroom } from "@/server/services/classroom.service"
 import { getClassroomThresholds } from "@/server/services/pet-level-config.service"
@@ -120,7 +120,7 @@ async function validateRule(tx: Prisma.TransactionClient, input: CreatePointTran
 }
 
 export interface PointFeedResult {
-  transaction: unknown
+  transaction: PointTransaction
   studentTotalPoints: number | null
   groupTotalPoints: number | null
   pet: {

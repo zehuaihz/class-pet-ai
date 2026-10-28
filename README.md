@@ -1,16 +1,16 @@
 # Class Pet AI
 
-> 用班级共同养成，让积分形成反馈闭环。
+> 每位学生养成自己的专属宠物，让积分形成反馈闭环。
 
 面向教师的班级管理、积分激励、打卡审批和教辅 AI 工具原型。
 
-教师记录课堂表现和打卡任务，积分进入可追溯流水并推动全班共享宠物成长；班级大屏展示共同进度，Dashboard 帮助教师发现待处理事项；AI 当前仅生成**可编辑草稿**，不自动发送给学生或家长。
+教师记录课堂表现和打卡任务，积分进入可追溯流水并推动每位学生的专属宠物成长；宠物满级毕业自动获得徽章，徽章可在小卖部兑换奖励；班级大屏展示共同进度，Dashboard 帮助教师发现待处理事项；AI 当前仅生成**可编辑草稿**，不自动发送给学生或家长。
 
 当前项目是教师端 MVP / 原型，不是生产就绪系统。后端能力多于前端页面，部分页面仍是静态占位；AI 仍处于 mock 模式。
 
 ## 核心价值
 
-- **共同目标**：全班积分推动同一只宠物成长，不只依赖个人排名。
+- **个人养成**：每位学生一只专属宠物，积分喂养成长，满级毕业领徽章，徽章可兑换奖励。
 - **可追溯**：积分、撤销、打卡审批保留业务流水，便于教师复核。
 - **教师掌控**：AI 输出先生成草稿，由教师编辑和确认，不自动对外发布。
 
@@ -58,14 +58,14 @@ npm run db:seed
 npm run dev
 ```
 
-打开 <http://localhost:3000>，使用 `.env` 中的 `TEACHER_LOGIN_EMAIL` 和 `TEACHER_LOGIN_PASSWORD` 登录。若希望直接看到 seed 演示班级，请保留默认邮箱 `teacher@example.com`；`prisma/seed.ts` 当前固定使用该邮箱，修改登录邮箱后会创建没有演示班级的另一位教师。
+打开 <http://localhost:3000>，使用 `.env` 中的 `TEACHER_LOGIN_EMAIL` 和 `TEACHER_LOGIN_PASSWORD` 登录。若希望直接看到 seed 演示班级，请保留默认邮箱 `teacher@example.com`；`prisma/seed.mjs` 当前固定使用该邮箱，修改登录邮箱后会创建没有演示班级的另一位教师。
 
-> 当前仓库没有 Prisma migration 文件。开发/演示环境使用 `prisma db push` 同步 schema；不能把 `prisma migrate deploy` 描述为当前已验证的空库生产初始化流程。正式上线前，必须先建立、提交并验证 migration 链。
+> 仓库已包含 Prisma migration 链（含 zoo v1 破坏性迁移：删除旧 `Pet`/`PetMood`、改用 `StudentPet`/`Badge`）。开发/演示环境也可用 `prisma db push` 同步 schema；生产初始化使用 `prisma migrate deploy`（Docker 部署中的 `migrate` 服务会自动执行）。**在已有旧版数据的环境升级前，请先用 `scripts/backup-db.sh` 备份。**
 
 ### 建议体验路径
 
 1. 登录教师账号，查看 Dashboard。
-2. 进入班级积分页面，给学生手动加分，查看积分流水、排行榜和宠物成长日志。
+2. 进入班级积分页面，给学生手动加分，查看积分流水和排行榜，再到动物园观察学生宠物成长。
 3. 创建打卡任务，查看任务列表和统计接口能力。
 4. 打卡记录提交 API、待审核批准/拒绝 API 已存在，但当前教师 UI 没有学生提交页面；没有预置打卡记录时，无法仅靠当前 UI 完成审批体验。
 5. 打开班级大屏，观察约 3 秒轮询后的数据更新。
@@ -82,22 +82,22 @@ npm run dev
         ↓
 可追溯积分流水
         ↓
-学生余额 / 小组总分 + 班级宠物成长
+学生余额 / 小组总分 + 学生宠物成长
         ↓
 Dashboard 汇总 / 班级大屏反馈
         ↓
 教师确认下一步行动
 ```
 
-### 手动积分与宠物成长
+### 手动积分与宠物喂养
 
 ```text
 教师选择学生或小组
   → 创建积分流水
   → 更新学生或小组总分
-  → 学生正积分推动 Pet.growthValue
-  → 写入 PetGrowthLog
-  → Dashboard / 大屏读取聚合结果
+  → 学生正积分喂养 StudentPet.growthValue
+  → 写入 PetGrowthLog，满级毕业自动铸造徽章（Badge）
+  → Dashboard / 大屏 / 动物园读取聚合结果
 ```
 
 当前边界：宠物只处理正积分增长；撤销通过新建反向流水实现，不删除原流水，且尚未具备幂等保护。
@@ -140,7 +140,11 @@ Dashboard 汇总 / 班级大屏反馈
 | `/classrooms/[id]/points` | 学生积分、流水和反向流水；小组积分仅在后端服务/API 层支持 |
 | `/classrooms/[id]/checkins` | 查看任务/记录，批准或拒绝待审核记录 |
 | `/classrooms/[id]/checkins/new` | 创建打卡任务，当前表单选项有限 |
-| `/classrooms/[id]/pet` | 宠物状态和成长日志 |
+| `/classrooms/[id]/zoo` | 班级动物园：学生宠物卡片、一键分配、宠物详情和喂食 |
+| `/classrooms/[id]/badges` | 荣誉墙：徽章墙视图 |
+| `/classrooms/[id]/leaderboard` | 光荣榜：按徽章数排序 |
+| `/classrooms/[id]/settings` | 系统设置：班级信息、成长阈值、全局系统名称 |
+| `/classrooms/[id]/pet` | 旧"班级宠物"入口，重定向到动物园 |
 | `/classrooms/[id]/screen` | 班级展示大屏和全屏模式 |
 | `/classrooms/[id]/ai` | AI 工作台入口，部分能力为占位卡片 |
 | `/classrooms/[id]/ai/comment` | 生成并编辑 mock 评语草稿 |
@@ -176,7 +180,7 @@ src/server/auth/         会话与教师身份校验
 src/server/services/     班级、积分、打卡、宠物、AI 业务服务
 src/server/utils/        错误和响应封装
 prisma/schema.prisma     数据模型事实源
-prisma/seed.ts           本地演示数据
+prisma/seed.mjs          本地演示数据（教师、班级、宠物品种、成长阈值、学生宠物）
 tests/                   Vitest 单元/API 合约测试
 e2e/                     Playwright 浏览器流程
 ```
@@ -230,7 +234,7 @@ API 返回统一 envelope：
 | `npm run db:generate` | 生成 Prisma Client |
 | `npm run db:migrate` | 开发环境创建/应用 Prisma migration |
 | `npm run db:deploy` | 部署已提交的 Prisma migration 链 |
-| `npm run db:seed` | 写入本地演示教师、班级、宠物和学生 |
+| `npm run db:seed` | 写入本地演示教师、班级、宠物品种、成长阈值、系统设置和学生宠物 |
 
 ## 测试与验证
 

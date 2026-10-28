@@ -73,8 +73,8 @@ test.describe("authenticated transactional flows", () => {
     expect(statuses.filter((status) => status === 200).length).toBeLessThanOrEqual(2)
 
     const rewards = await page.request.get(`${baseURL}/api/v1/student/rewards`)
-    const body = (await rewards.json()) as { data: { totalPoints: number; items: Array<{ id: string; stock: number | null }> } }
-    expect(body.data.totalPoints).toBeGreaterThanOrEqual(0)
+    const body = (await rewards.json()) as { data: { availableBadges: number; items: Array<{ id: string; stock: number | null }> } }
+    expect(body.data.availableBadges).toBeGreaterThanOrEqual(0)
 
     const item = body.data.items.find((candidate) => candidate.id === data.rewardId)
     if (item && item.stock !== null) expect(item.stock).toBeGreaterThanOrEqual(0)
@@ -85,19 +85,19 @@ test.describe("authenticated transactional flows", () => {
     await loginViaApi(page.context(), baseURL!, data.teacher.identifier, data.teacher.password)
 
     const created = await page.request.post(`${baseURL}/api/v1/classrooms/${data.classroomId}/rewards`, {
-      data: { name: `E2E 新奖励 ${Date.now()}`, costPoints: 3, stock: 1, enabled: true },
+      data: { name: `E2E 新奖励 ${Date.now()}`, costBadges: 3, stock: 1, enabled: true },
       headers: { "content-type": "application/json" },
     })
     expect(created.ok()).toBeTruthy()
     const createdBody = (await created.json()) as { data: { id: string } }
 
     const updated = await page.request.patch(`${baseURL}/api/v1/rewards/${createdBody.data.id}`, {
-      data: { costPoints: 4, enabled: false },
+      data: { costBadges: 4, enabled: false },
       headers: { "content-type": "application/json" },
     })
     expect(updated.ok()).toBeTruthy()
-    const updatedBody = (await updated.json()) as { data: { costPoints: number; enabled: boolean } }
-    expect(updatedBody.data.costPoints).toBe(4)
+    const updatedBody = (await updated.json()) as { data: { costBadges: number; enabled: boolean } }
+    expect(updatedBody.data.costBadges).toBe(4)
     expect(updatedBody.data.enabled).toBe(false)
 
     const removed = await page.request.delete(`${baseURL}/api/v1/rewards/${createdBody.data.id}`)

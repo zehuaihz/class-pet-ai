@@ -53,7 +53,7 @@ describe("approveCheckinRecord", () => {
       findUnique: dbMocks.studentFindUnique,
       updateMany: dbMocks.studentUpdateMany,
     },
-    pet: { findUnique: dbMocks.petFindUnique, update: dbMocks.petUpdate },
+    studentPet: { findFirst: dbMocks.petFindUnique, update: dbMocks.petUpdate },
     petGrowthLog: { create: dbMocks.petGrowthLogCreate },
   }
 

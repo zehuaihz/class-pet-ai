@@ -16,10 +16,10 @@ interface ChildDetail {
     group: { id: string; name: string } | null
     classroom: { id: string; name: string; grade: string | null }
   }
-  pet: { name: string; level: number; mood: string } | null
+  pet: { name: string; level: number; speciesKey: string } | null
   transactions: Array<{ id: string; delta: number; reason: string; source: string; createdAt: string }>
   checkins: Array<{ id: string; taskTitle: string; status: string; rewardPoints: number; submittedAt: string | null }>
-  redemptions: Array<{ id: string; rewardName: string; pointsSpent: number; status: string; createdAt: string }>
+  redemptions: Array<{ id: string; rewardName: string; badgesSpent: number; status: string; createdAt: string }>
 }
 
 const CHECKIN_LABELS: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function ParentPage() {
                 {detail.student.totalPoints} 分
               </div>
               {detail.pet ? (
-                <div className="mt-1 text-slate-500">班级宠物：{detail.pet.name} Lv.{detail.pet.level}</div>
+                <div className="mt-1 text-slate-500">宠物：{detail.pet.name} Lv.{detail.pet.level}</div>
               ) : null}
             </section>
 
@@ -174,7 +174,7 @@ export default function ParentPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-slate-600">{REDEMPTION_LABELS[redemption.status] ?? redemption.status}</div>
-                          <div className="text-sm text-slate-500">-{redemption.pointsSpent} 分</div>
+                          <div className="text-sm text-slate-500">-{redemption.badgesSpent} 徽章</div>
                         </div>
                       </div>
                     ))}

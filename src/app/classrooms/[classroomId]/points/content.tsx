@@ -54,7 +54,7 @@ export default function PointsPage() {
     loadData()
   }, [loadData])
 
-  async function handleSubmit(input: { studentId: string; delta: number; reason: string; ruleId?: string; syncPetGrowth: boolean; idempotencyKey: string }) {
+  async function handleSubmit(input: { studentId: string; delta: number; reason: string; ruleId?: string; idempotencyKey: string }) {
     try {
       await apiRequest("/api/v1/points/transactions", {
         method: "POST",
@@ -65,7 +65,6 @@ export default function PointsPage() {
           delta: input.delta,
           reason: input.reason,
           ruleId: input.ruleId,
-          syncPetGrowth: input.syncPetGrowth,
           source: "MANUAL",
           idempotencyKey: input.idempotencyKey,
         }),

@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/AppShell"
 import { RewardItemForm, type RewardItemFormValues } from "@/components/rewards/RewardItemForm"
 import { apiRequest } from "@/lib/api-client"
 
-interface RewardItem { id: string; name: string; description: string | null; costPoints: number; stock: number | null; enabled: boolean }
+interface RewardItem { id: string; name: string; description: string | null; costBadges: number; stock: number | null; enabled: boolean }
 interface Redemption { id: string; status: string; student: { name: string }; rewardItem: { name: string } }
 
 const REDEMPTION_LABELS: Record<string, string> = {
@@ -43,7 +43,7 @@ export default function RewardsPage() {
 
   useEffect(() => { void load() }, [load])
 
-  async function createItem(values: { name: string; description?: string; costPoints: number; stock: number | null; enabled: boolean }) {
+  async function createItem(values: { name: string; description?: string; costBadges: number; stock: number | null; enabled: boolean }) {
     setBusy(true)
     setError(null)
     setNotice(null)
@@ -62,7 +62,7 @@ export default function RewardsPage() {
     }
   }
 
-  async function updateItem(itemId: string, values: { name: string; description?: string; costPoints: number; stock: number | null; enabled: boolean }) {
+  async function updateItem(itemId: string, values: { name: string; description?: string; costBadges: number; stock: number | null; enabled: boolean }) {
     setBusy(true)
     setError(null)
     setNotice(null)
@@ -110,7 +110,7 @@ export default function RewardsPage() {
     ? {
         name: editing.name,
         description: editing.description ?? "",
-        costPoints: editing.costPoints,
+        costBadges: editing.costBadges,
         stock: editing.stock === null ? "" : String(editing.stock),
         enabled: editing.enabled,
       }
@@ -142,7 +142,7 @@ export default function RewardsPage() {
                       {item.name}
                       {!item.enabled ? <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">已下架</span> : null}
                     </div>
-                    <div className="text-sm text-slate-500">{item.costPoints} 分 · 库存 {item.stock ?? "无限"}</div>
+                    <div className="text-sm text-slate-500">{item.costBadges} 徽章 · 库存 {item.stock ?? "无限"}</div>
                   </div>
                   <div className="flex gap-2">
                     <button className="rounded-lg border px-3 py-1" onClick={() => setEditing(editing?.id === item.id ? null : item)}>

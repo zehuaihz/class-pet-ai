@@ -16,7 +16,7 @@ import {
   reversePointTransaction,
 } from "@/server/services/point-transaction.service"
 import { requestRedemption } from "@/server/services/redemption.service"
-import { seedClassroomForTeacher, seedParentForStudent } from "@/test/seeds/seed-classroom"
+import { seedClassroomForTeacher, grantBadgesToStudent, seedParentForStudent } from "@/test/seeds/seed-classroom"
 import { expectAppError, expectBalanceMatchesLedger, expectPrismaError, readStudentPoints } from "./setup/harness"
 
 async function seed(studentPoints = 0) {
@@ -25,7 +25,7 @@ async function seed(studentPoints = 0) {
     classroom: { name: "完整性班" },
     students: [{ name: "小明", totalPoints: studentPoints }],
     pointRules: [{ name: "举手回答", pointDelta: 2 }],
-    rewardItems: [{ name: "铅笔", costPoints: 5, stock: 3 }],
+    rewardItems: [{ name: "铅笔", costBadges: 5, stock: 3 }],
     checkinTasks: [{ title: "每日阅读", rewardPoints: 4, requireEvidence: true }],
   })
   const [student] = seeded.students
@@ -129,34 +129,21 @@ describe("transaction integrity", () => {
       expect(await prisma.pointTransaction.count({ where: { checkinRecordId: record.id } })).toBe(1)
     })
 
-    it("allows only one point transaction per redemption", async () => {
-      const { classroom, student, rewardItems } = await seed(20)
-      const redemption = await requestRedemption(student.id, rewardItems[0].id)
+    it("allows only one badge per graduated pet and one checkin record per (task, student)", async () => {
+      const { student, checkinTasks } = await seed()
+      const [task] = checkinTasks
+      const [badge] = await grantBadgesToStudent(student.id, 1)
 
+      // Badge.studentPetId is unique: one graduated pet can mint only one badge.
       await expectPrismaError(
-        prisma.pointTransaction.create({
+        prisma.badge.create({
           data: {
-            classroomId: classroom.id,
-            teacherId: (await prisma.classroom.findUniqueOrThrow({ where: { id: classroom.id } })).teacherId,
             studentId: student.id,
-            delta: -5,
-            reason: "重复兑换扣分",
-            source: "REWARD",
-            redemptionId: redemption.id,
+            studentPetId: badge.studentPetId,
+            name: "重复徽章",
+            visualKey: "badge-default",
           },
         }),
-        "P2002",
-      )
-
-      expect(await prisma.pointTransaction.count({ where: { redemptionId: redemption.id } })).toBe(1)
-    })
-
-    it("allows one pet and one checkin record per (task, student)", async () => {
-      const { classroom, student, checkinTasks } = await seed()
-      const [task] = checkinTasks
-
-      await expectPrismaError(
-        prisma.pet.create({ data: { classroomId: classroom.id, name: "第二只宠物", species: "cat" } }),
         "P2002",
       )
 
@@ -199,6 +186,7 @@ describe("transaction integrity", () => {
         delta: 6,
         reason: "级联测试",
       })
+      await grantBadgesToStudent(student.id, rewardItems[0].costBadges)
       await requestRedemption(student.id, rewardItems[0].id)
       await prisma.checkinRecord.create({ data: { taskId: task.id, studentId: student.id } })
       await prisma.group.create({ data: { classroomId: classroom.id, name: "第一组" } })
@@ -214,7 +202,8 @@ describe("transaction integrity", () => {
 
       expect(await prisma.student.count({ where: { classroomId: classroom.id } })).toBe(0)
       expect(await prisma.pointTransaction.count({ where: { classroomId: classroom.id } })).toBe(0)
-      expect(await prisma.pet.count({ where: { classroomId: classroom.id } })).toBe(0)
+      expect(await prisma.studentPet.count({ where: { student: { classroomId: classroom.id } } })).toBe(0)
+      expect(await prisma.badge.count()).toBe(0)
       expect(await prisma.petGrowthLog.count()).toBe(0)
       expect(await prisma.checkinRecord.count()).toBe(0)
       expect(await prisma.checkinTask.count()).toBe(0)
@@ -308,7 +297,9 @@ describe("transaction integrity", () => {
       expect(await prisma.petGrowthLog.count()).toBe(0)
       expect(await prisma.auditLog.count()).toBe(0)
       expect(await readStudentPoints(student.id)).toBe(0)
-      expect(await prisma.pet.findUniqueOrThrow({ where: { classroomId: classroom.id } })).toMatchObject({
+      expect(
+        await prisma.studentPet.findFirstOrThrow({ where: { studentId: student.id, status: "GROWING" } }),
+      ).toMatchObject({
         growthValue: 0,
       })
     })
@@ -496,6 +487,7 @@ describe("transaction integrity", () => {
         delta: 20,
         reason: "审计奖励",
       })
+      await grantBadgesToStudent(student.id, rewardItems[0].costBadges)
       const redemption = await requestRedemption(student.id, rewardItems[0].id)
 
       const actions = (await prisma.auditLog.findMany()).map((row) => row.action)
@@ -505,7 +497,7 @@ describe("transaction integrity", () => {
         where: { entityType: "RewardRedemption", entityId: redemption.id },
       })
       expect(redemptionAudit.classroomId).toBe(classroom.id)
-      expect(redemptionAudit.metadata).toMatchObject({ rewardItemId: rewardItems[0].id, pointsSpent: 5 })
+      expect(redemptionAudit.metadata).toMatchObject({ rewardItemId: rewardItems[0].id, badgesSpent: 5 })
     })
   })
 })

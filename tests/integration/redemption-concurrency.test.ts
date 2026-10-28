@@ -1,13 +1,13 @@
 /**
- * Redemption races: stock, balance and idempotency.
+ * Redemption races: stock, badges and idempotency.
  *
- * Invariants:
+ * Invariants (zoo 体系：兑换消耗徽章而非积分):
  *  - stock never goes negative and is never oversold
- *  - a student balance never goes negative, even under parallel redemptions
- *  - replaying one idempotency key returns the same redemption and charges once
- *  - cancelling restores stock and points exactly once
+ *  - a student's available badges never go negative, even under parallel redemptions
+ *  - replaying one idempotency key returns the same redemption and consumes once
+ *  - cancelling restores stock and badges exactly once
  */
-import { RewardRedemptionStatus } from "@prisma/client"
+import { BadgeStatus, RewardRedemptionStatus } from "@prisma/client"
 import { describe, expect, it } from "vitest"
 import { prisma } from "@/server/db/prisma"
 import {
@@ -16,31 +16,37 @@ import {
   fulfillRedemption,
   requestRedemption,
 } from "@/server/services/redemption.service"
-import { seedClassroomForTeacher } from "@/test/seeds/seed-classroom"
+import { grantBadgesToStudent, seedClassroomForTeacher } from "@/test/seeds/seed-classroom"
 import { CONCURRENCY } from "./setup/integration-env"
 import {
   describeError,
   expectAppError,
-  expectBalanceMatchesLedger,
   readStudentPoints,
   settleAll,
-  sumDeltas,
   unexpectedRejections,
   uniqueKey,
 } from "./setup/harness"
 
 const COST = 10
 
-async function seedContest(input: { stock: number | null; pointsPerStudent: number; students: number }) {
+async function readAvailableBadges(studentId: string): Promise<number> {
+  return prisma.badge.count({ where: { studentId, status: BadgeStatus.AVAILABLE } })
+}
+
+async function seedContest(input: { stock: number | null; badgesPerStudent: number; students: number }) {
   const seeded = await seedClassroomForTeacher({
     teacher: { email: `redemption-${uniqueKey("teacher")}@test.com`, name: "兑换老师" },
     classroom: { name: "兑换班" },
     students: Array.from({ length: input.students }, (_, index) => ({
       name: `学生${index}`,
-      totalPoints: input.pointsPerStudent,
+      totalPoints: 0,
     })),
-    rewardItems: [{ name: "铅笔", costPoints: COST, stock: input.stock }],
+    rewardItems: [{ name: "铅笔", costBadges: COST, stock: input.stock }],
   })
+
+  for (const student of seeded.students) {
+    await grantBadgesToStudent(student.id, input.badgesPerStudent)
+  }
 
   return { ...seeded, rewardItem: seeded.rewardItems[0] }
 }
@@ -49,9 +55,10 @@ describe("redemption concurrency", () => {
   it("never oversells the last stock and never leaves negative stock", async () => {
     const students = CONCURRENCY
     const stock = 3
+    const badgesPerStudent = 100
     const { students: seededStudents, rewardItem } = await seedContest({
       stock,
-      pointsPerStudent: 100,
+      badgesPerStudent,
       students,
     })
 
@@ -69,24 +76,22 @@ describe("redemption concurrency", () => {
 
     const redemptions = await prisma.rewardRedemption.findMany({ where: { rewardItemId: rewardItem.id } })
     expect(redemptions).toHaveLength(stock)
-    expect(await prisma.pointTransaction.count({ where: { redemptionId: { in: redemptions.map((row) => row.id) } } })).toBe(
-      stock,
-    )
 
-    // Losers were never charged.
+    // Losers were never charged: their badges stayed available.
     for (const student of seededStudents) {
-      const balance = await readStudentPoints(student.id)
-      expect(balance === 100 || balance === 100 - COST).toBe(true)
-      expect(balance).toBeGreaterThanOrEqual(0)
-      await expectBalanceMatchesLedger(student.id, 100)
+      const available = await readAvailableBadges(student.id)
+      expect(available === badgesPerStudent || available === badgesPerStudent - COST).toBe(true)
+      expect(available).toBeGreaterThanOrEqual(0)
+      // 点数余额不受兑换影响（徽章才是兑换货币）。
+      expect(await readStudentPoints(student.id)).toBe(0)
     }
   })
 
-  it("never drives a balance negative when N parallel redemptions exceed it", async () => {
+  it("never drives a badge balance negative when N parallel redemptions exceed it", async () => {
     const affordable = 3
     const { students, rewardItem } = await seedContest({
       stock: null,
-      pointsPerStudent: COST * affordable,
+      badgesPerStudent: COST * affordable,
       students: 1,
     })
     const [student] = students
@@ -99,17 +104,17 @@ describe("redemption concurrency", () => {
     expect(attempts.fulfilled).toHaveLength(affordable)
     expect(attempts.rejected).toHaveLength(CONCURRENCY - affordable)
 
-    const balance = await readStudentPoints(student.id)
-    expect(balance).toBe(0)
-    expect(balance).toBeGreaterThanOrEqual(0)
-    expect(await expectBalanceMatchesLedger(student.id, COST * affordable)).toBe(0)
-    expect(await sumDeltas(student.id)).toBe(-COST * affordable)
+    const available = await readAvailableBadges(student.id)
+    expect(available).toBe(0)
+    expect(available).toBeGreaterThanOrEqual(0)
     expect(await prisma.rewardRedemption.count()).toBe(affordable)
-    expect(await prisma.pointTransaction.count()).toBe(affordable)
+    expect(await prisma.badge.count({ where: { studentId: student.id, status: BadgeStatus.CONSUMED } })).toBe(
+      COST * affordable,
+    )
   })
 
-  it("charges exactly once when one idempotency key is replayed in parallel", async () => {
-    const { students, rewardItem } = await seedContest({ stock: 5, pointsPerStudent: 100, students: 1 })
+  it("consumes badges exactly once when one idempotency key is replayed in parallel", async () => {
+    const { students, rewardItem } = await seedContest({ stock: 5, badgesPerStudent: 100, students: 1 })
     const [student] = students
     const idempotencyKey = uniqueKey("redeem")
 
@@ -121,19 +126,22 @@ describe("redemption concurrency", () => {
     expect(new Set(fulfilled.map((redemption) => redemption.id)).size).toBe(1)
 
     expect(await prisma.rewardRedemption.count({ where: { idempotencyKey } })).toBe(1)
-    expect(await readStudentPoints(student.id)).toBe(100 - COST)
-    expect(await expectBalanceMatchesLedger(student.id, 100)).toBe(100 - COST)
+    expect(await readAvailableBadges(student.id)).toBe(100 - COST)
 
     const item = await prisma.rewardItem.findUniqueOrThrow({ where: { id: rewardItem.id } })
     expect(item.stock).toBe(4)
 
-    const pointRows = await prisma.pointTransaction.findMany({ where: { studentId: student.id } })
-    expect(pointRows).toHaveLength(1)
-    expect(pointRows[0].delta).toBe(-COST)
+    const consumed = await prisma.badge.findMany({
+      where: { studentId: student.id, status: BadgeStatus.CONSUMED },
+    })
+    expect(consumed).toHaveLength(COST)
+    for (const badge of consumed) {
+      expect(badge.consumedByRedemptionId).toBe(fulfilled[0]?.id ?? null)
+    }
   })
 
-  it("replays a redemption idempotency key sequentially without charging twice", async () => {
-    const { students, rewardItem } = await seedContest({ stock: null, pointsPerStudent: 50, students: 1 })
+  it("replays a redemption idempotency key sequentially without consuming twice", async () => {
+    const { students, rewardItem } = await seedContest({ stock: null, badgesPerStudent: 50, students: 1 })
     const [student] = students
     const idempotencyKey = uniqueKey("redeem-seq")
 
@@ -142,15 +150,14 @@ describe("redemption concurrency", () => {
 
     expect(second.id).toBe(first.id)
     expect(await prisma.rewardRedemption.count()).toBe(1)
-    expect(await prisma.pointTransaction.count()).toBe(1)
-    expect(await readStudentPoints(student.id)).toBe(50 - COST)
+    expect(await readAvailableBadges(student.id)).toBe(50 - COST)
   })
 
   it("rejects reuse of an idempotency key with a different request", async () => {
-    const { students, rewardItems } = await seedContest({ stock: null, pointsPerStudent: 100, students: 1 })
+    const { students, rewardItems } = await seedContest({ stock: null, badgesPerStudent: 100, students: 1 })
     const [student] = students
     const secondItem = await prisma.rewardItem.create({
-      data: { classroomId: rewardItems[0].classroomId, name: "橡皮", costPoints: 5, stock: null },
+      data: { classroomId: rewardItems[0].classroomId, name: "橡皮", costBadges: 5, stock: null },
     })
     const idempotencyKey = uniqueKey("redeem-conflict")
 
@@ -158,15 +165,15 @@ describe("redemption concurrency", () => {
     await expectAppError(requestRedemption(student.id, secondItem.id, idempotencyKey), "CONFLICT", 409)
 
     expect(await prisma.rewardRedemption.count()).toBe(1)
-    expect(await readStudentPoints(student.id)).toBe(100 - COST)
+    expect(await readAvailableBadges(student.id)).toBe(100 - COST)
   })
 
-  it("restores stock and points exactly once for N parallel cancels", async () => {
-    const { teacher, students, rewardItem } = await seedContest({ stock: 4, pointsPerStudent: 30, students: 1 })
+  it("restores stock and badges exactly once for N parallel cancels", async () => {
+    const { teacher, students, rewardItem } = await seedContest({ stock: 4, badgesPerStudent: 30, students: 1 })
     const [student] = students
 
     const redemption = await requestRedemption(student.id, rewardItem.id)
-    expect(await readStudentPoints(student.id)).toBe(30 - COST)
+    expect(await readAvailableBadges(student.id)).toBe(30 - COST)
     expect((await prisma.rewardItem.findUniqueOrThrow({ where: { id: rewardItem.id } })).stock).toBe(3)
 
     const { fulfilled, rejected } = await settleAll(
@@ -177,36 +184,31 @@ describe("redemption concurrency", () => {
     expect(fulfilled).toHaveLength(CONCURRENCY)
     for (const result of fulfilled) expect(result?.status).toBe(RewardRedemptionStatus.CANCELLED)
 
-    expect(await readStudentPoints(student.id)).toBe(30)
-    expect(await expectBalanceMatchesLedger(student.id, 30)).toBe(30)
-    expect(await sumDeltas(student.id)).toBe(0)
+    // 徽章全额退还且仅退一次。
+    expect(await readAvailableBadges(student.id)).toBe(30)
+    expect(await prisma.badge.count({ where: { consumedByRedemptionId: redemption.id } })).toBe(0)
 
     const item = await prisma.rewardItem.findUniqueOrThrow({ where: { id: rewardItem.id } })
     expect(item.stock).toBe(4)
 
-    const refunds = await prisma.pointTransaction.findMany({ where: { idempotencyKey: `cancel:${redemption.id}` } })
-    expect(refunds).toHaveLength(1)
-    expect(refunds[0].source).toBe("ROLLBACK")
-    expect(refunds[0].delta).toBe(COST)
-
     expect(await prisma.auditLog.count({ where: { action: "REDEMPTION_CANCELLED" } })).toBe(1)
   })
 
-  it("does not restore stock or points twice when a cancelled redemption is cancelled again", async () => {
-    const { teacher, students, rewardItem } = await seedContest({ stock: 2, pointsPerStudent: 25, students: 1 })
+  it("does not restore stock or badges twice when a cancelled redemption is cancelled again", async () => {
+    const { teacher, students, rewardItem } = await seedContest({ stock: 2, badgesPerStudent: 25, students: 1 })
     const [student] = students
 
     const redemption = await requestRedemption(student.id, rewardItem.id)
     await cancelRedemption(teacher.id, redemption.id)
     await cancelRedemption(teacher.id, redemption.id)
 
-    expect(await readStudentPoints(student.id)).toBe(25)
+    expect(await readAvailableBadges(student.id)).toBe(25)
     expect((await prisma.rewardItem.findUniqueOrThrow({ where: { id: rewardItem.id } })).stock).toBe(2)
-    expect(await prisma.pointTransaction.count({ where: { source: "ROLLBACK" } })).toBe(1)
+    expect(await prisma.badge.count({ where: { status: BadgeStatus.CONSUMED } })).toBe(0)
   })
 
   it("refuses to cancel a fulfilled redemption", async () => {
-    const { teacher, students, rewardItem } = await seedContest({ stock: 2, pointsPerStudent: 25, students: 1 })
+    const { teacher, students, rewardItem } = await seedContest({ stock: 2, badgesPerStudent: 25, students: 1 })
     const [student] = students
 
     const redemption = await requestRedemption(student.id, rewardItem.id)
@@ -215,12 +217,12 @@ describe("redemption concurrency", () => {
 
     const result = await cancelRedemption(teacher.id, redemption.id)
     expect(result?.status).toBe(RewardRedemptionStatus.FULFILLED)
-    expect(await readStudentPoints(student.id)).toBe(25 - COST)
+    expect(await readAvailableBadges(student.id)).toBe(25 - COST)
     expect((await prisma.rewardItem.findUniqueOrThrow({ where: { id: rewardItem.id } })).stock).toBe(1)
   })
 
   it("lets only one handler move a redemption out of PENDING", async () => {
-    const { teacher, students, rewardItem } = await seedContest({ stock: null, pointsPerStudent: 25, students: 1 })
+    const { teacher, students, rewardItem } = await seedContest({ stock: null, badgesPerStudent: 25, students: 1 })
     const [student] = students
 
     const redemption = await requestRedemption(student.id, rewardItem.id)
@@ -237,12 +239,12 @@ describe("redemption concurrency", () => {
   })
 
   it("refuses a redemption the student cannot afford", async () => {
-    const { students, rewardItem } = await seedContest({ stock: null, pointsPerStudent: COST - 1, students: 1 })
+    const { students, rewardItem } = await seedContest({ stock: null, badgesPerStudent: COST - 1, students: 1 })
     const [student] = students
 
     await expectAppError(requestRedemption(student.id, rewardItem.id), "CONFLICT", 409)
 
     expect(await prisma.rewardRedemption.count()).toBe(0)
-    expect(await readStudentPoints(student.id)).toBe(COST - 1)
+    expect(await readAvailableBadges(student.id)).toBe(COST - 1)
   })
 })

@@ -10,7 +10,10 @@ export async function GET() {
     const teacher = await requireTeacher()
     const classrooms = await prisma.classroom.findMany({
       where: { teacherId: teacher.teacherProfileId },
-      include: { _count: { select: { students: true } }, pet: true },
+      include: {
+        _count: { select: { students: true } },
+        students: { select: { _count: { select: { studentPets: true } } } },
+      },
       orderBy: { createdAt: "desc" },
     })
 
@@ -21,7 +24,7 @@ export async function GET() {
         grade: classroom.grade,
         schoolName: classroom.schoolName,
         studentCount: classroom._count.students,
-        petLevel: classroom.pet?.level ?? 1,
+        petCount: classroom.students.reduce((sum, student) => sum + student._count.studentPets, 0),
       })),
     })
   } catch (error) {
@@ -44,7 +47,6 @@ export async function POST(request: NextRequest) {
         grade: body.grade ?? null,
         schoolName: body.schoolName ?? null,
         inviteCode: createInviteCode(),
-        pet: { create: { name: "云朵龙", species: "dragon" } },
       },
     })
 

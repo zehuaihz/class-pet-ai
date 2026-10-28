@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react"
 export interface RewardItemFormValues {
   name: string
   description: string
-  costPoints: number
+  costBadges: number
   stock: string
   enabled: boolean
 }
@@ -14,11 +14,11 @@ export interface RewardItemFormProps {
   initialValues?: Partial<RewardItemFormValues>
   submitLabel: string
   disabled?: boolean
-  onSubmit: (values: { name: string; description?: string; costPoints: number; stock: number | null; enabled: boolean }) => Promise<void>
+  onSubmit: (values: { name: string; description?: string; costBadges: number; stock: number | null; enabled: boolean }) => Promise<void>
   onCancel?: () => void
 }
 
-const EMPTY: RewardItemFormValues = { name: "", description: "", costPoints: 10, stock: "", enabled: true }
+const EMPTY: RewardItemFormValues = { name: "", description: "", costBadges: 10, stock: "", enabled: true }
 
 export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit, onCancel }: RewardItemFormProps) {
   const [values, setValues] = useState<RewardItemFormValues>({ ...EMPTY, ...initialValues })
@@ -35,8 +35,8 @@ export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit,
       setError("请填写奖励名称")
       return
     }
-    if (!Number.isInteger(values.costPoints) || values.costPoints < 1) {
-      setError("所需积分必须是不小于 1 的整数")
+    if (!Number.isInteger(values.costBadges) || values.costBadges < 1) {
+      setError("所需徽章必须是不小于 1 的整数")
       return
     }
     const stockText = values.stock.trim()
@@ -50,7 +50,7 @@ export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit,
     await onSubmit({
       name,
       description: values.description.trim() || undefined,
-      costPoints: values.costPoints,
+      costBadges: values.costBadges,
       stock,
       enabled: values.enabled,
     })
@@ -69,13 +69,13 @@ export function RewardItemForm({ initialValues, submitLabel, disabled, onSubmit,
           />
         </label>
         <label className="text-sm">
-          <span className="text-slate-600">所需积分</span>
+          <span className="text-slate-600">所需徽章</span>
           <input
             type="number"
             min={1}
             className="mt-1 w-full rounded-lg border px-3 py-2"
-            value={values.costPoints}
-            onChange={(event) => setValues((current) => ({ ...current, costPoints: Number(event.target.value) }))}
+            value={values.costBadges}
+            onChange={(event) => setValues((current) => ({ ...current, costBadges: Number(event.target.value) }))}
             required
           />
         </label>

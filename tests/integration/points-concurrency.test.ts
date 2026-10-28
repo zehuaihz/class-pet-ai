@@ -17,7 +17,7 @@ import { CONCURRENCY } from "./setup/integration-env"
 import {
   describeError,
   expectBalanceMatchesLedger,
-  readPetGrowth,
+  readStudentPetGrowth,
   readStudentPoints,
   settleAll,
   sumDeltas,
@@ -62,7 +62,7 @@ describe("point transaction concurrency", () => {
     expect(await expectBalanceMatchesLedger(student.id)).toBe(7)
 
     // Pet growth is a side effect of the ledger: it must not be applied twice either.
-    expect(await readPetGrowth(classroom.id)).toBe(7)
+    expect(await readStudentPetGrowth(student.id)).toBe(7)
     expect(await prisma.petGrowthLog.count()).toBe(1)
     expect(await prisma.auditLog.count({ where: { action: "POINTS_GRANTED" } })).toBe(1)
   })
@@ -120,7 +120,7 @@ describe("point transaction concurrency", () => {
     expect(await expectBalanceMatchesLedger(student.id)).toBe(0)
 
     // Reversals never feed pet growth.
-    expect(await readPetGrowth(classroom.id)).toBe(10)
+    expect(await readStudentPetGrowth(student.id)).toBe(10)
     expect(await prisma.petGrowthLog.count()).toBe(1)
   })
 
