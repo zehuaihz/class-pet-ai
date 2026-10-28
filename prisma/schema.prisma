@@ -169,6 +169,7 @@ model Classroom {
   aiJobs         AiJob[]
   auditLogs      AuditLog[]
   petLevelConfig PetLevelConfig[]
+  comments       StudentComment[]
 
   @@index([teacherId])
 }
@@ -211,6 +212,7 @@ model Student {
   redemptions    RewardRedemption[]
   studentPets    StudentPet[]
   badges         Badge[]
+  comments       StudentComment[]
 
   @@index([classroomId])
   @@index([groupId])
@@ -492,4 +494,20 @@ model AiJob {
 
   @@index([classroomId, type, status])
   @@index([teacherId, createdAt])
+}
+
+model StudentComment {
+  id               String   @id @default(cuid())
+  classroomId      String
+  studentId        String
+  teacherProfileId String?
+  content          String
+  tone             String   @default("鼓励")
+  createdAt        DateTime @default(now())
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([classroomId, createdAt(sort: Desc)])
+  @@index([studentId, createdAt(sort: Desc)])
 }

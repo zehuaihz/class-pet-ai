@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ cl
     const teacher = await requireTeacher()
     const { classroomId } = await context.params
     const classroom = await assertTeacherOwnsClassroom(teacher.teacherProfileId, classroomId)
-    const dashboard = await getClassroomDashboard(classroomId)
+    const dashboard = await getClassroomDashboard(classroomId, undefined, { topStudentsTake: 8 })
     return jsonOk({
       classroomName: classroom.name,
       pet: dashboard.pet,

@@ -7,6 +7,7 @@ const dashboardMocks = vi.hoisted(() => ({
   pointTransactionFindMany: vi.fn(),
   checkinTaskFindMany: vi.fn(),
   checkinRecordCount: vi.fn(),
+  petLevelConfigFindMany: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -21,6 +22,7 @@ vi.mock("@/server/db/prisma", () => ({
     pointTransaction: { findMany: dashboardMocks.pointTransactionFindMany },
     checkinTask: { findMany: dashboardMocks.checkinTaskFindMany },
     checkinRecord: { count: dashboardMocks.checkinRecordCount },
+    petLevelConfig: { findMany: dashboardMocks.petLevelConfigFindMany },
   },
 }))
 
@@ -33,6 +35,7 @@ describe("dashboard check-in statistics", () => {
     dashboardMocks.studentCount.mockResolvedValue(5)
     dashboardMocks.pointTransactionFindMany.mockResolvedValue([])
     dashboardMocks.checkinTaskFindMany.mockResolvedValue([])
+    dashboardMocks.petLevelConfigFindMany.mockResolvedValue([])
     dashboardMocks.checkinRecordCount
       .mockResolvedValueOnce(3)
       .mockResolvedValueOnce(2)

@@ -1,23 +1,39 @@
 import { PetStatus } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { getClassroomCheckinStats } from "@/server/services/checkin-stats.service"
+import { getClassroomThresholds } from "@/server/services/pet-level-config.service"
+import { getLevelProgress } from "@/server/domain/student-pet-rules"
 
-export async function getClassroomDashboard(classroomId: string, actorTeacherId?: string) {
-  const [pets, students, recentTransactions, activeTasks, totalStudents, todayTransactions] = await Promise.all([
+export async function getClassroomDashboard(
+  classroomId: string,
+  actorTeacherId?: string,
+  options?: { topStudentsTake?: number },
+) {
+  const [pets, students, recentTransactions, activeTasks, totalStudents, todayTransactions, thresholds] = await Promise.all([
     prisma.studentPet.findMany({
       where: { student: { classroomId }, status: PetStatus.GROWING },
-      select: { name: true, level: true },
+      select: { name: true, level: true, growthValue: true, speciesKey: true },
     }),
-    prisma.student.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { totalPoints: "desc" }, take: 3 }),
+    prisma.student.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { totalPoints: "desc" }, take: options?.topStudentsTake ?? 3 }),
     prisma.pointTransaction.findMany({ where: { classroomId }, orderBy: { createdAt: "desc" }, take: 5, include: { student: true, group: true } }),
     prisma.checkinTask.findMany({ where: { classroomId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.student.count({ where: { classroomId, status: "ACTIVE" } }),
     prisma.pointTransaction.findMany({ where: { classroomId, createdAt: { gte: startOfToday() } } }),
+    getClassroomThresholds(classroomId),
   ])
 
+  const bestPet = pets.length > 0 ? pets.reduce((a, b) => (b.level > a.level || (b.level === a.level && b.growthValue > a.growthValue) ? b : a)) : null
+  const progress = getLevelProgress(bestPet?.growthValue ?? 0, thresholds)
   const pet = {
     name: "班级宠物",
-    level: pets.length > 0 ? Math.max(...pets.map((item) => item.level)) : 0,
+    level: bestPet?.level ?? 0,
+    speciesKey: bestPet?.speciesKey ?? null,
+    growthValue: bestPet?.growthValue ?? 0,
+    totalPets: pets.length,
+    nextThreshold: progress.nextThreshold,
+    progressRatio: progress.progressRatio,
+    remainingToNext: progress.remainingToNext,
+    graduated: progress.graduated,
   }
 
   const stats = actorTeacherId
