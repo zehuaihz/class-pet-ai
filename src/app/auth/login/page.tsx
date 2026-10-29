@@ -11,6 +11,7 @@ import { landingPathForRole } from "@/lib/role-landing"
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
+  const [asAdmin, setAsAdmin] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -20,7 +21,12 @@ export default function LoginPage() {
     const response = await fetch("/api/v1/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ identifier, password, loginType: "password" }),
+      body: JSON.stringify({
+        identifier,
+        password,
+        loginType: "password",
+        ...(asAdmin ? { role: "ADMIN" } : {}),
+      }),
     })
 
     if (!response.ok) {
@@ -67,13 +73,29 @@ export default function LoginPage() {
         </div>
         <p className="mt-4 text-sm text-ink-soft">教师登录后，可管理班级、积分、打卡和宠物成长。</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div className="flex gap-2" role="group" aria-label="登录身份">
+            <button
+              type="button"
+              className={`flex-1 rounded-xl border-2 px-3 py-1.5 text-sm font-bold transition ${!asAdmin ? "border-ink bg-butter text-ink shadow-[3px_3px_0_0_rgba(28,25,23,0.25)]" : "border-ink/15 bg-white text-ink-soft hover:border-ink/40"}`}
+              onClick={() => setAsAdmin(false)}
+            >
+              👩‍🏫 教师
+            </button>
+            <button
+              type="button"
+              className={`flex-1 rounded-xl border-2 px-3 py-1.5 text-sm font-bold transition ${asAdmin ? "border-ink bg-butter text-ink shadow-[3px_3px_0_0_rgba(28,25,23,0.25)]" : "border-ink/15 bg-white text-ink-soft hover:border-ink/40"}`}
+              onClick={() => setAsAdmin(true)}
+            >
+              🛠️ 管理员
+            </button>
+          </div>
           <label className="block">
-            <span className="text-sm font-semibold text-ink">账号</span>
+            <span className="text-sm font-semibold text-ink">{asAdmin ? "管理员账号" : "账号"}</span>
             <input
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               className="sticker-input mt-1 w-full"
-              placeholder="输入账号"
+              placeholder={asAdmin ? "管理员邮箱" : "输入账号"}
             />
           </label>
           <label className="block">

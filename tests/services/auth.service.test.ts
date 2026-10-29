@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const dbMocks = vi.hoisted(() => ({
   userFindUnique: vi.fn(),
+  userFindFirst: vi.fn(),
   userCreate: vi.fn(),
   teacherProfileCreate: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
-    user: { findUnique: dbMocks.userFindUnique, create: dbMocks.userCreate },
+    user: { findUnique: dbMocks.userFindUnique, findFirst: dbMocks.userFindFirst, create: dbMocks.userCreate },
     teacherProfile: { create: dbMocks.teacherProfileCreate },
   },
 }))

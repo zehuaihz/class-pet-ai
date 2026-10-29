@@ -135,16 +135,19 @@ model TeacherProfile {
   id         String   @id @default(cuid())
   userId     String   @unique
   schoolName String?
+  schoolId   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school             School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   classrooms         Classroom[]
   pointTxs           PointTransaction[]
   approvedCheckins   CheckinRecord[]    @relation("CheckinApprovedBy")
   handledRedemptions RewardRedemption[] @relation("RewardHandledBy")
   aiJobs             AiJob[]
   createdTasks       CheckinTask[]
+  subscriptions      Subscription[]
 }
 
 model Classroom {
@@ -510,4 +513,39 @@ model StudentComment {
 
   @@index([classroomId, createdAt(sort: Desc)])
   @@index([studentId, createdAt(sort: Desc)])
+}
+
+model School {
+  id           String   @id @default(cuid())
+  name        String
+  status      String   @default("ACTIVE")
+  contactName String?
+  contactPhone String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teachers      TeacherProfile[]
+  subscriptions Subscription[]
+
+  @@index([status, createdAt])
+}
+
+model Subscription {
+  id              String    @id @default(cuid())
+  schoolId        String?
+  teacherProfileId String?
+  plan            String    @default("YEARLY")
+  seats           Int       @default(1)
+  amountCents     Int       @default(0)
+  status          String    @default("PAID")
+  startedAt       DateTime  @default(now())
+  expiresAt       DateTime?
+  note            String?
+  createdAt       DateTime  @default(now())
+
+  school        School?        @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([schoolId])
 }

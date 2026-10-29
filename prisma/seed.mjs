@@ -62,12 +62,29 @@ async function main() {
     await prisma.passwordCredential.create({ data: { userId: user.id, passwordHash, passwordSalt, requireReset: false } })
   }
 
+  // 平台运营演示数据：学校 + 订阅订单（卖了多少份）。
+  const demoSchools = [
+    { name: "测试小学", contactName: "王主任", contactPhone: "13800000001" },
+    { name: "阳光实验小学", contactName: "陈老师", contactPhone: "13800000002" },
+  ]
+  const schools = []
+  for (const school of demoSchools) {
+    schools.push(
+      await prisma.school.upsert({
+        where: { id: `school_demo_${school.name}` },
+        update: { contactName: school.contactName, contactPhone: school.contactPhone },
+        create: { id: `school_demo_${school.name}`, ...school },
+      }),
+    )
+  }
+
   const teacher = await prisma.teacherProfile.upsert({
     where: { userId: user.id },
-    update: {},
+    update: { schoolId: schools[0].id },
     create: {
       userId: user.id,
       schoolName: "测试小学",
+      schoolId: schools[0].id,
     },
   })
 
@@ -154,7 +171,54 @@ async function main() {
     })
   }
 
+  // 订阅订单演示数据：概览页「卖了多少份」有数据可看。
+  const existingOrders = await prisma.subscription.count()
+  if (existingOrders === 0) {
+    const now = new Date()
+    const monthsAgo = (months) => {
+      const date = new Date(now)
+      date.setMonth(date.getMonth() - months)
+      return date
+    }
+    await prisma.subscription.createMany({
+      data: [
+        {
+          schoolId: schools[0].id,
+          teacherProfileId: teacher.id,
+          plan: "MONTHLY",
+          seats: 1,
+          amountCents: 9900,
+          status: "PAID",
+          startedAt: monthsAgo(2),
+          expiresAt: monthsAgo(1),
+          note: "单教师月付体验",
+        },
+        {
+          schoolId: schools[0].id,
+          plan: "YEARLY",
+          seats: 5,
+          amountCents: 198000,
+          status: "PAID",
+          startedAt: monthsAgo(1),
+          expiresAt: monthsAgo(-11),
+          note: "5 个班级年付",
+        },
+        {
+          schoolId: schools[1].id,
+          plan: "YEARLY",
+          seats: 10,
+          amountCents: 398000,
+          status: "PAID",
+          startedAt: monthsAgo(0),
+          expiresAt: monthsAgo(-12),
+          note: "整校年付",
+        },
+      ],
+    })
+  }
+
   console.log(`Seeded zoo: ${species.length} species, ${students.length} student pets`)
+  console.log(`Seeded platform: ${schools.length} schools, ${existingOrders === 0 ? 3 : existingOrders} subscription orders`)
 }
 
 main()

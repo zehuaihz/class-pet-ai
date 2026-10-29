@@ -31,6 +31,20 @@ export async function authenticateTeacher(input: unknown) {
   const credentials = getTeacherCredentials()
 
   if (!safeEqual(identifier, credentials.email) || !safeEqual(password, credentials.password)) {
+    // Fallback: teacher accounts provisioned by an admin log in with their
+    // database credentials instead of the env bootstrap account.
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        email: { equals: identifier, mode: "insensitive" },
+        role: UserRole.TEACHER,
+        status: "ACTIVE",
+      },
+      include: { credentials: true, teacherProfile: true },
+    })
+    if (dbUser && dbUser.credentials.length > 0) {
+      const matched = dbUser.credentials.find((credential) => verifyPassword(password, credential))
+      if (matched && !matched.requireReset) return dbUser
+    }
     throw new AppError("UNAUTHORIZED", "Invalid credentials")
   }
 
