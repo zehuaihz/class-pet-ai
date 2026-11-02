@@ -1,4 +1,5 @@
 import { AnthropicProvider } from "@/server/ai/anthropic.provider"
+import { DeepSeekProvider } from "@/server/ai/deepseek.provider"
 import { MockAiProvider } from "@/server/ai/mock.provider"
 import type { AiProvider } from "@/server/ai/ai-provider"
 
@@ -12,6 +13,12 @@ export function getAiProvider(): AiProvider {
     cached = new AnthropicProvider(
       process.env.ANTHROPIC_API_KEY ?? process.env.AI_API_KEY ?? "",
       process.env.AI_MODEL || "claude-sonnet-4-5",
+      Number(process.env.AI_TIMEOUT_MS || 30_000),
+    )
+  } else if (providerName === "deepseek") {
+    cached = new DeepSeekProvider(
+      process.env.DEEPSEEK_API_KEY ?? process.env.AI_API_KEY ?? "",
+      process.env.AI_MODEL || "deepseek-chat",
       Number(process.env.AI_TIMEOUT_MS || 30_000),
     )
   } else {
