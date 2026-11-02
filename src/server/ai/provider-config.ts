@@ -8,10 +8,11 @@ export function getAiProvider(): AiProvider {
   if (cached) return cached
   const providerName = (process.env.AI_PROVIDER ?? "mock").toLowerCase()
   if (providerName === "anthropic") {
+    // `||` 而非 `??`：compose 透传空串时也要回退默认值。
     cached = new AnthropicProvider(
       process.env.ANTHROPIC_API_KEY ?? process.env.AI_API_KEY ?? "",
-      process.env.AI_MODEL ?? "claude-opus-4-8",
-      Number(process.env.AI_TIMEOUT_MS ?? 30_000),
+      process.env.AI_MODEL || "claude-sonnet-4-5",
+      Number(process.env.AI_TIMEOUT_MS || 30_000),
     )
   } else {
     cached = new MockAiProvider(process.env.AI_MODEL ?? "mock-model")
