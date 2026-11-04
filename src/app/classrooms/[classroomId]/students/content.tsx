@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { AppShell } from "@/components/layout/AppShell"
 import { apiRequest } from "@/lib/api-client"
+import type { ImportStudent } from "@/lib/student-import"
 
 interface Student {
   id: string
@@ -34,7 +35,11 @@ export default function StudentsPage() {
   const [form, setForm] = useState<StudentForm>({ name: "", studentNo: "", groupId: "" })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [importText, setImportText] = useState("")
+  const [importStudents, setImportStudents] = useState<ImportStudent[]>([])
+  const [importFileName, setImportFileName] = useState<string | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importFailures, setImportFailures] = useState<{ row: number; reason: string }[]>([])
+  const [importing, setImporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,27 +109,67 @@ export default function StudentsPage() {
     }
   }
 
-  async function importStudents(event: React.FormEvent) {
-    event.preventDefault()
-    let parsed: unknown
+  async function downloadTemplate() {
+    const { buildStudentTemplate } = await import("@/lib/student-import")
+    const blob = new Blob([buildStudentTemplate()], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = "学生导入模板.xlsx"
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setImportFileName(file.name)
+    setImportError(null)
+    setImportFailures([])
     try {
-      parsed = JSON.parse(importText)
-    } catch {
-      setError("导入学生失败，请检查 JSON 格式")
+      const { parseStudentWorkbook } = await import("@/lib/student-import")
+      const parsed = parseStudentWorkbook(await file.arrayBuffer())
+      if (parsed.length === 0) {
+        setImportStudents([])
+        setImportError("没有解析到学生数据：请检查表格里是否有数据行")
+        return
+      }
+      setImportStudents(parsed)
+    } catch (error) {
+      setImportStudents([])
+      setImportError(error instanceof Error ? error.message : "Excel 解析失败，请使用下载的模板")
+    }
+  }
+
+  async function submitImport(event: React.FormEvent) {
+    event.preventDefault()
+    if (importStudents.length === 0) {
+      setImportError("请先选择要导入的 Excel 文件")
       return
     }
+    setImporting(true)
     try {
       const data = await apiRequest<{ createdCount: number; failedCount: number; failures?: { row: number; reason: string }[] }>(`/api/v1/classrooms/${classroomId}/students/import`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ students: parsed }),
+        body: JSON.stringify({ students: importStudents }),
       })
-      setShowImport(false)
-      setImportText("")
-      setError(data.failedCount > 0 ? `导入 ${data.createdCount} 人，${data.failedCount} 行失败` : null)
+      if (data.failedCount > 0) {
+        setImportFailures(data.failures ?? [])
+        setError(`导入 ${data.createdCount} 人，${data.failedCount} 行失败，请修正后重试`)
+      } else {
+        setShowImport(false)
+        setError(null)
+      }
+      setImportStudents([])
+      setImportFileName(null)
       await loadStudents()
     } catch {
-      setError("导入学生失败，请检查 JSON 格式")
+      setImportError("导入学生失败，请稍后重试")
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -189,12 +234,38 @@ export default function StudentsPage() {
       ) : null}
       {showImport ? (
         <div className="fixed inset-0 grid place-items-center bg-ink/50 p-4" onMouseDown={() => setShowImport(false)}>
-          <form onSubmit={importStudents} className="animate-pop-in w-full max-w-lg space-y-4 rounded-sticker-lg border-2 border-ink bg-paper p-6 shadow-sticker-lg" onMouseDown={(event) => event.stopPropagation()}>
-            <h2 className="font-display text-xl font-bold text-ink">📥 导入学生 JSON</h2>
-            <textarea required value={importText} onChange={(event) => setImportText(event.target.value)} className="sticker-input h-48 w-full !rounded-xl font-mono text-sm" placeholder='[{"name":"小明","studentNo":"001"}]' />
+          <form onSubmit={submitImport} className="animate-pop-in w-full max-w-lg space-y-4 rounded-sticker-lg border-2 border-ink bg-paper p-6 shadow-sticker-lg" onMouseDown={(event) => event.stopPropagation()}>
+            <h2 className="font-display text-xl font-bold text-ink">📥 导入学生（Excel）</h2>
+            <p className="text-sm text-ink-soft">
+              第一步：下载模板，按格式填写「姓名」「学号」；第二步：选择填好的文件导入。学号可留空。
+            </p>
+            <button type="button" className="btn-outline w-full" onClick={downloadTemplate}>📄 下载 Excel 模板</button>
+
+            <label htmlFor="student-import-file" className="sticker-input flex w-full cursor-pointer items-center justify-between gap-3 !rounded-xl text-sm">
+              <span className={importFileName ? "font-semibold text-ink" : "text-ink-soft"}>
+                {importFileName ?? "点击选择 .xlsx 文件"}
+              </span>
+              <span aria-hidden="true">📂</span>
+            </label>
+            <input id="student-import-file" type="file" accept=".xlsx,.xls" className="sr-only" onChange={handleFileChange} />
+
+            {importStudents.length > 0 ? (
+              <div className="rounded-xl border-2 border-forest bg-forest-mist p-3 text-sm font-semibold text-forest-deep">
+                ✓ 已解析 {importStudents.length} 名学生（{importFileName}），点击「开始导入」提交
+              </div>
+            ) : null}
+            {importError ? <div className="rounded-xl border-2 border-berry bg-berry-soft p-3 text-sm font-semibold text-berry">{importError}</div> : null}
+            {importFailures.length > 0 ? (
+              <ul className="max-h-32 space-y-1 overflow-auto rounded-xl border-2 border-berry/40 bg-white p-3 text-xs text-ink">
+                {importFailures.map((failure) => (
+                  <li key={`${failure.row}-${failure.reason}`}>第 {failure.row} 行：{failure.reason === "name required" ? "姓名不能为空" : failure.reason}</li>
+                ))}
+              </ul>
+            ) : null}
+
             <div className="flex justify-end gap-2">
               <button type="button" className="btn-outline" onClick={() => setShowImport(false)}>取消</button>
-              <button className="btn-tangerine">导入</button>
+              <button className="btn-tangerine" disabled={importing || importStudents.length === 0}>{importing ? "导入中…" : "开始导入"}</button>
             </div>
           </form>
         </div>
