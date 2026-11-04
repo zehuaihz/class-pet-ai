@@ -196,6 +196,16 @@ textarea {
   box-shadow: 0 0 0 0 transparent;
 }
 
+/* 按钮禁用态（导入中/无文件等场景） */
+.btn-ink:disabled,
+.btn-outline:disabled,
+.btn-tangerine:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 2px 2px 0 0 rgba(30, 24, 17, 0.25);
+}
+
 /* 输入控件 */
 .sticker-input {
   background: #fff;
